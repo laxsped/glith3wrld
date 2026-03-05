@@ -8,7 +8,8 @@ public enum BindingAction
     Left = 3,
     Right = 4,
     Run = 5,
-    Jump = 6
+    Jump = 6,
+    Action = 7
 }
 
 public static class GameInputBindings
@@ -23,6 +24,7 @@ public static class GameInputBindings
     public static KeyCode RightKey { get; private set; } = KeyCode.D;
     public static KeyCode RunKey { get; private set; } = KeyCode.LeftShift;
     public static KeyCode JumpKey { get; private set; } = KeyCode.Space;
+    public static KeyCode ActionKey { get; private set; } = KeyCode.E;
 
     public static void EnsureLoaded()
     {
@@ -37,6 +39,7 @@ public static class GameInputBindings
         RightKey = Load("Right", KeyCode.D);
         RunKey = Load("Run", KeyCode.LeftShift);
         JumpKey = Load("Jump", KeyCode.Space);
+        ActionKey = Load("Action", KeyCode.E);
         loaded = true;
     }
 
@@ -57,6 +60,8 @@ public static class GameInputBindings
                 return RunKey;
             case BindingAction.Jump:
                 return JumpKey;
+            case BindingAction.Action:
+                return ActionKey;
             default:
                 return KeyCode.None;
         }
@@ -90,6 +95,10 @@ public static class GameInputBindings
             case BindingAction.Jump:
                 JumpKey = key;
                 Save("Jump", key);
+                break;
+            case BindingAction.Action:
+                ActionKey = key;
+                Save("Action", key);
                 break;
         }
     }

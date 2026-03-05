@@ -10,6 +10,7 @@ using UnityEditor;
 public class ДверьИнтеракт : MonoBehaviour
 {
     private const string ЯзыкКлюч = "PauseSimple.language";
+    private const string ЭффектыКлюч = "PauseSimple.volume_effects";
     private const string ИконкиПуть = "Assets/ICONS/Controls/keyboard-mouse-input-icons-251008/keyboard-input-icons/";
     private const string ЗвукПоУмолчанию = "Assets/Door, Cabinet and Locker Sound Pack (Free)/FREE VERSION/Locked Door Turn Doorknob 3.wav";
     private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -19,11 +20,11 @@ public class ДверьИнтеракт : MonoBehaviour
 
     [Header("Поиск двери")]
     [SerializeField] private string тегДвери = "Door";
-    [SerializeField] private KeyCode клавишаДействия = KeyCode.E;
 
     [Header("Точка UI")]
     [SerializeField] private Transform точкаПривязки;
     [SerializeField] private Vector3 смещениеМира = new Vector3(0f, 1.1f, 0f);
+    [SerializeField] private PlayerWASDAnimator аниматорИгрока;
 
     [Header("Звук")]
     [SerializeField] private AudioSource источникЗвука;
@@ -32,7 +33,7 @@ public class ДверьИнтеракт : MonoBehaviour
 
     [Header("Текстура интеракта")]
     [SerializeField] private Renderer рендерерАнимации;
-    [SerializeField] private Texture2D[] кадрыИнтеракт;
+    [SerializeField] private DirectionalFrames кадрыИнтеракт;
     [SerializeField] private float fpsАнимации = 12f;
     [SerializeField] private string папкаКадров = "Assets/sprite/16x32/frames_16x32/Interact";
 
@@ -51,7 +52,6 @@ public class ДверьИнтеракт : MonoBehaviour
     private Text низТекст;
     private Sprite иконкаСпрайт;
     private Material runtimeMat;
-    private Texture originalTexture;
     private bool дверьРядом;
     private Collider текущаяДверь;
     private readonly HashSet<Collider> двериВТриггере = new HashSet<Collider>();
@@ -59,9 +59,37 @@ public class ДверьИнтеракт : MonoBehaviour
     private int нажатий;
     private Coroutine корутинаНадписи;
     private Coroutine корутинаАнимации;
+    private FacingDirection последняяСторона = FacingDirection.Front;
+    private KeyCode cachedActionKey = KeyCode.None;
+
+    [Serializable]
+    private struct DirectionalFrames
+    {
+        public Texture2D[] front;
+        public Texture2D[] frontSide;
+        public Texture2D[] side;
+        public Texture2D[] backSide;
+        public Texture2D[] back;
+    }
+
+    private enum FacingDirection
+    {
+        Front,
+        FrontSide,
+        Side,
+        BackSide,
+        Back
+    }
 
     private void Awake()
     {
+        GameInputBindings.EnsureLoaded();
+
+        if (аниматорИгрока == null)
+        {
+            аниматорИгрока = GetComponent<PlayerWASDAnimator>();
+        }
+
         if (точкаПривязки == null)
         {
             точкаПривязки = transform;
@@ -75,7 +103,6 @@ public class ДверьИнтеракт : MonoBehaviour
         if (рендерерАнимации != null)
         {
             runtimeMat = рендерерАнимации.material;
-            originalTexture = ReadCurrentTexture(runtimeMat);
         }
 
         BuildUi();
@@ -84,6 +111,7 @@ public class ДверьИнтеракт : MonoBehaviour
 
     private void Update()
     {
+        RefreshActionKeyIfNeeded();
         UpdatePromptPosition();
 
         if (!дверьРядом || текущаяДверь == null)
@@ -91,7 +119,7 @@ public class ДверьИнтеракт : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(клавишаДействия))
+        if (Input.GetKeyDown(GameInputBindings.ActionKey))
         {
             if (!счетчикНажатийПоДвери.TryGetValue(текущаяДверь, out нажатий))
             {
@@ -104,14 +132,14 @@ public class ДверьИнтеракт : MonoBehaviour
 
             if (источникЗвука != null && звукЗаперто != null)
             {
-                источникЗвука.PlayOneShot(звукЗаперто, громкостьOneShot);
+                источникЗвука.PlayOneShot(звукЗаперто, GetScaledEffectsVolume());
             }
 
             if (корутинаАнимации != null)
             {
                 StopCoroutine(корутинаАнимации);
             }
-            корутинаАнимации = StartCoroutine(ПроигратьКадрыИнтеракт());
+            корутинаАнимации = StartCoroutine(ПроигратьКадрыИнтеракт(ОпределитьСторонуИнтеракта()));
 
             if (нажатий >= 2)
             {
@@ -170,23 +198,112 @@ public class ДверьИнтеракт : MonoBehaviour
         низПлашка.gameObject.SetActive(false);
     }
 
-    private IEnumerator ПроигратьКадрыИнтеракт()
+    private IEnumerator ПроигратьКадрыИнтеракт(FacingDirection сторона)
     {
-        if (runtimeMat == null || кадрыИнтеракт == null || кадрыИнтеракт.Length == 0)
+        Texture2D[] кадры = GetFramesForDirection(кадрыИнтеракт, сторона);
+        if (runtimeMat == null || кадры == null || кадры.Length == 0)
         {
             yield break;
         }
 
         float frameDur = 1f / Mathf.Max(1f, fpsАнимации);
-        for (int i = 0; i < кадрыИнтеракт.Length; i++)
+        float timer = 0f;
+        int idx = 0;
+        SetTexture(runtimeMat, кадры[0]);
+
+        while (idx < кадры.Length - 1)
         {
-            SetTexture(runtimeMat, кадрыИнтеракт[i]);
-            yield return new WaitForSeconds(frameDur);
+            timer += Time.deltaTime;
+            while (timer >= frameDur && idx < кадры.Length - 1)
+            {
+                timer -= frameDur;
+                idx++;
+                SetTexture(runtimeMat, кадры[idx]);
+            }
+            yield return null;
         }
 
-        if (originalTexture != null)
+        if (аниматорИгрока != null)
         {
-            SetTexture(runtimeMat, originalTexture);
+            аниматорИгрока.ForceRefreshCurrentFrame();
+        }
+    }
+
+    private FacingDirection ОпределитьСторонуИнтеракта()
+    {
+        if (аниматорИгрока != null)
+        {
+            string id = аниматорИгрока.GetFacingDirectionId();
+            switch (id)
+            {
+                case "front":
+                    последняяСторона = FacingDirection.Front;
+                    return последняяСторона;
+                case "frontSide":
+                    последняяСторона = FacingDirection.FrontSide;
+                    return последняяСторона;
+                case "side":
+                    последняяСторона = FacingDirection.Side;
+                    return последняяСторона;
+                case "backSide":
+                    последняяСторона = FacingDirection.BackSide;
+                    return последняяСторона;
+                case "back":
+                    последняяСторона = FacingDirection.Back;
+                    return последняяСторона;
+            }
+        }
+
+        Vector2 input = ReadMoveInput();
+        bool isMoving = input.sqrMagnitude > 0.001f;
+        if (!isMoving)
+        {
+            return последняяСторона;
+        }
+
+        float absX = Mathf.Abs(input.x);
+        float absY = Mathf.Abs(input.y);
+
+        if (absY > 0.001f && absX <= 0.001f)
+        {
+            последняяСторона = input.y > 0f ? FacingDirection.Back : FacingDirection.Front;
+            return последняяСторона;
+        }
+
+        if (absX > 0.001f && absY <= 0.001f)
+        {
+            последняяСторона = FacingDirection.Side;
+            return последняяСторона;
+        }
+
+        последняяСторона = input.y > 0f ? FacingDirection.BackSide : FacingDirection.FrontSide;
+        return последняяСторона;
+    }
+
+    private static Vector2 ReadMoveInput()
+    {
+        GameInputBindings.EnsureLoaded();
+        float x = 0f;
+        float y = 0f;
+
+        if (Input.GetKey(GameInputBindings.LeftKey)) x -= 1f;
+        if (Input.GetKey(GameInputBindings.RightKey)) x += 1f;
+        if (Input.GetKey(GameInputBindings.ForwardKey)) y += 1f;
+        if (Input.GetKey(GameInputBindings.BackwardKey)) y -= 1f;
+
+        return new Vector2(x, y);
+    }
+
+    private static Texture2D[] GetFramesForDirection(DirectionalFrames frames, FacingDirection direction)
+    {
+        switch (direction)
+        {
+            case FacingDirection.Front: return frames.front;
+            case FacingDirection.FrontSide: return frames.frontSide;
+            case FacingDirection.Side: return frames.side;
+            case FacingDirection.BackSide: return frames.backSide;
+            case FacingDirection.Back: return frames.back;
+            default: return frames.front;
         }
     }
 
@@ -224,7 +341,7 @@ public class ДверьИнтеракт : MonoBehaviour
         текстКлавиши.fontSize = Mathf.Max(8, размерШрифта);
         текстКлавиши.color = цветТекста;
         текстКлавиши.alignment = TextAnchor.MiddleCenter;
-        текстКлавиши.text = клавишаДействия.ToString();
+        текстКлавиши.text = GameInputBindings.ActionKey.ToString();
 
         GameObject bottomGo = new GameObject("LockedPanel", typeof(RectTransform), typeof(Image));
         bottomGo.transform.SetParent(canvasGo.transform, false);
@@ -305,9 +422,10 @@ public class ДверьИнтеракт : MonoBehaviour
 
     private void LoadKeyIcon()
     {
+        KeyCode actionKey = GameInputBindings.ActionKey;
         Sprite sp = null;
 #if UNITY_EDITOR
-        string slug = KeyToSlug(клавишаДействия);
+        string slug = KeyToSlug(actionKey);
         if (!string.IsNullOrEmpty(slug))
         {
             sp = AssetDatabase.LoadAssetAtPath<Sprite>(ИконкиПуть + "key-" + slug + ".png");
@@ -321,9 +439,26 @@ public class ДверьИнтеракт : MonoBehaviour
         }
         if (текстКлавиши != null)
         {
-            текстКлавиши.text = клавишаДействия.ToString();
+            текстКлавиши.text = actionKey.ToString();
             текстКлавиши.enabled = sp == null;
         }
+
+        cachedActionKey = actionKey;
+    }
+
+    private void RefreshActionKeyIfNeeded()
+    {
+        if (cachedActionKey != GameInputBindings.ActionKey)
+        {
+            LoadKeyIcon();
+        }
+    }
+
+    private float GetScaledEffectsVolume()
+    {
+        int effectsLevel = Mathf.Clamp(PlayerPrefs.GetInt(ЭффектыКлюч, 10), 0, 10);
+        float effects01 = effectsLevel / 10f;
+        return Mathf.Clamp01(громкостьOneShot * effects01);
     }
 
     private Collider ChooseNearestDoor()
@@ -368,7 +503,6 @@ public class ДверьИнтеракт : MonoBehaviour
             if (рендерерАнимации != null)
             {
                 runtimeMat = рендерерАнимации.material;
-                originalTexture = ReadCurrentTexture(runtimeMat);
             }
         }
 
@@ -376,19 +510,6 @@ public class ДверьИнтеракт : MonoBehaviour
         {
             источникЗвука = door.GetComponent<AudioSource>();
         }
-    }
-
-    private static Texture ReadCurrentTexture(Material mat)
-    {
-        if (mat == null)
-        {
-            return null;
-        }
-        if (mat.HasProperty(BaseMapId)) return mat.GetTexture(BaseMapId);
-        if (mat.HasProperty(MainTexId)) return mat.GetTexture(MainTexId);
-        if (mat.HasProperty(UnlitColorMapId)) return mat.GetTexture(UnlitColorMapId);
-        if (mat.HasProperty(BaseColorMapId)) return mat.GetTexture(BaseColorMapId);
-        return null;
     }
 
     private static void SetTexture(Material mat, Texture tex)
@@ -446,40 +567,72 @@ public class ДверьИнтеракт : MonoBehaviour
             звукЗаперто = AssetDatabase.LoadAssetAtPath<AudioClip>(ЗвукПоУмолчанию);
         }
 
-        if (кадрыИнтеракт == null || кадрыИнтеракт.Length == 0)
+        bool hasFrames = кадрыИнтеракт.front != null && кадрыИнтеракт.front.Length > 0;
+        hasFrames |= кадрыИнтеракт.frontSide != null && кадрыИнтеракт.frontSide.Length > 0;
+        hasFrames |= кадрыИнтеракт.side != null && кадрыИнтеракт.side.Length > 0;
+        hasFrames |= кадрыИнтеракт.backSide != null && кадрыИнтеракт.backSide.Length > 0;
+        hasFrames |= кадрыИнтеракт.back != null && кадрыИнтеракт.back.Length > 0;
+
+        if (!hasFrames)
         {
             string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { папкаКадров });
-            List<string> paths = new List<string>(guids.Length);
+            List<string> f = new List<string>();
+            List<string> fr = new List<string>();
+            List<string> r = new List<string>();
+            List<string> br = new List<string>();
+            List<string> b = new List<string>();
             for (int i = 0; i < guids.Length; i++)
             {
                 string p = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (!string.IsNullOrEmpty(p))
+                if (string.IsNullOrEmpty(p))
                 {
-                    paths.Add(p);
+                    continue;
                 }
-            }
-            paths.Sort(System.StringComparer.OrdinalIgnoreCase);
 
-            List<Texture2D> textures = new List<Texture2D>(paths.Count);
-            for (int i = 0; i < paths.Count; i++)
-            {
-                Texture2D t = AssetDatabase.LoadAssetAtPath<Texture2D>(paths[i]);
-                if (t != null)
-                {
-                    textures.Add(t);
-                }
+                string name = System.IO.Path.GetFileNameWithoutExtension(p).ToUpperInvariant();
+                if (name.StartsWith("INTERACTFR")) fr.Add(p);
+                else if (name.StartsWith("INTERACTBR")) br.Add(p);
+                else if (name.StartsWith("INTERACTR")) r.Add(p);
+                else if (name.StartsWith("INTERACTF")) f.Add(p);
+                else if (name.StartsWith("INTERACTB")) b.Add(p);
             }
 
-            if (textures.Count > 0)
-            {
-                кадрыИнтеракт = textures.ToArray();
-            }
+            f.Sort(System.StringComparer.OrdinalIgnoreCase);
+            fr.Sort(System.StringComparer.OrdinalIgnoreCase);
+            r.Sort(System.StringComparer.OrdinalIgnoreCase);
+            br.Sort(System.StringComparer.OrdinalIgnoreCase);
+            b.Sort(System.StringComparer.OrdinalIgnoreCase);
+
+            кадрыИнтеракт.front = LoadTextures(f);
+            кадрыИнтеракт.frontSide = LoadTextures(fr);
+            кадрыИнтеракт.side = LoadTextures(r);
+            кадрыИнтеракт.backSide = LoadTextures(br);
+            кадрыИнтеракт.back = LoadTextures(b);
         }
 
         if (string.IsNullOrWhiteSpace(тегДвери))
         {
             тегДвери = "Door";
         }
+    }
+
+    private static Texture2D[] LoadTextures(List<string> paths)
+    {
+        if (paths == null || paths.Count == 0)
+        {
+            return Array.Empty<Texture2D>();
+        }
+
+        List<Texture2D> textures = new List<Texture2D>(paths.Count);
+        for (int i = 0; i < paths.Count; i++)
+        {
+            Texture2D t = AssetDatabase.LoadAssetAtPath<Texture2D>(paths[i]);
+            if (t != null)
+            {
+                textures.Add(t);
+            }
+        }
+        return textures.ToArray();
     }
 #endif
 }

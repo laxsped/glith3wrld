@@ -51,7 +51,8 @@ public class PauseMenuSimple : MonoBehaviour
         BindingAction.Left,
         BindingAction.Right,
         BindingAction.Run,
-        BindingAction.Jump
+        BindingAction.Jump,
+        BindingAction.Action
     };
     private static readonly KeyCode[] AllKeyCodes = (KeyCode[])Enum.GetValues(typeof(KeyCode));
 
@@ -453,6 +454,8 @@ public class PauseMenuSimple : MonoBehaviour
         CreateKeybindRow(controlsSectionRoot, new Vector2(settingsLabelX, yControls), itemsFont, BindingAction.Run);
         yControls -= 52f;
         CreateKeybindRow(controlsSectionRoot, new Vector2(settingsLabelX, yControls), itemsFont, BindingAction.Jump);
+        yControls -= 52f;
+        CreateKeybindRow(controlsSectionRoot, new Vector2(settingsLabelX, yControls), itemsFont, BindingAction.Action);
 
         SetSettingsSection(SettingsSection.General);
     }
@@ -1236,6 +1239,7 @@ public class PauseMenuSimple : MonoBehaviour
                 case BindingAction.Right: return "move right";
                 case BindingAction.Run: return "run";
                 case BindingAction.Jump: return "jump";
+                case BindingAction.Action: return "action";
                 default: return action.ToString().ToLowerInvariant();
             }
         }
@@ -1248,6 +1252,7 @@ public class PauseMenuSimple : MonoBehaviour
             case BindingAction.Right: return "ходьба вправо";
             case BindingAction.Run: return "бег";
             case BindingAction.Jump: return "прыжок";
+            case BindingAction.Action: return "действие";
             default: return action.ToString().ToLowerInvariant();
         }
     }

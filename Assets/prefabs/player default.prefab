@@ -1013,32 +1013,38 @@ MonoBehaviour:
   "\u043A\u043B\u0430\u0432\u0438\u0448\u0430\u0414\u0435\u0439\u0441\u0442\u0432\u0438\u044F": 101
   "\u0442\u043E\u0447\u043A\u0430\u041F\u0440\u0438\u0432\u044F\u0437\u043A\u0438": {fileID: 0}
   "\u0441\u043C\u0435\u0449\u0435\u043D\u0438\u0435\u041C\u0438\u0440\u0430": {x: 0, y: 1.1, z: 0}
+  "\u0430\u043D\u0438\u043C\u0430\u0442\u043E\u0440\u0418\u0433\u0440\u043E\u043A\u0430": {fileID: 3069663199643969668}
   "\u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0417\u0432\u0443\u043A\u0430": {fileID: 3397353040292743357}
   "\u0437\u0432\u0443\u043A\u0417\u0430\u043F\u0435\u0440\u0442\u043E": {fileID: 8300000, guid: ba0dd6d8b717e403ca0fa3bdebe97dad, type: 3}
   "\u0433\u0440\u043E\u043C\u043A\u043E\u0441\u0442\u044COneShot": 1
   "\u0440\u0435\u043D\u0434\u0435\u0440\u0435\u0440\u0410\u043D\u0438\u043C\u0430\u0446\u0438\u0438": {fileID: 7750580587268105905}
   "\u043A\u0430\u0434\u0440\u044B\u0418\u043D\u0442\u0435\u0440\u0430\u043A\u0442":
-  - {fileID: 2800000, guid: 0b702a4a2cb4edd44898417501c02801, type: 3}
-  - {fileID: 2800000, guid: 5df05b8ad6438474e82fa80c432ae061, type: 3}
-  - {fileID: 2800000, guid: 99f7b5e491c621a41a66dc230c189a9f, type: 3}
-  - {fileID: 2800000, guid: 57f7d302535f7304eb3212fdd5c47edf, type: 3}
-  - {fileID: 2800000, guid: ce095fe375843fa4d8dc2fbe00aa2953, type: 3}
-  - {fileID: 2800000, guid: c62bd85164d29dd4fa4ca2fd91a0381c, type: 3}
-  - {fileID: 2800000, guid: ff544d551d818bc448ff275504dc9ae0, type: 3}
-  - {fileID: 2800000, guid: 50a729139704f7045bbb6097980497e4, type: 3}
-  - {fileID: 2800000, guid: 5ca213b7e01dd9841ad7e8c19d914795, type: 3}
-  - {fileID: 2800000, guid: 70dec4ef7ef28bb49ad12d966b07c200, type: 3}
-  - {fileID: 2800000, guid: 6c5a74173b406f4479b3221b2650f73b, type: 3}
-  - {fileID: 2800000, guid: b5cfc6bdf7df98b4dbf90e0880d9cf84, type: 3}
-  - {fileID: 2800000, guid: adf3b0fe97145b04499adb8759dba577, type: 3}
-  - {fileID: 2800000, guid: 66068f2bed5252a42b9c43f6beef2140, type: 3}
-  - {fileID: 2800000, guid: 7c350eb4f6910824bb6cfde456cc35e7, type: 3}
-  - {fileID: 2800000, guid: d6903f16f6b1f224bb56b9db4829bad9, type: 3}
-  - {fileID: 2800000, guid: 9a6723ed0e9504c44a47520196d2afb3, type: 3}
-  - {fileID: 2800000, guid: a95b7120c1bb2f54995ca889f9d2daa3, type: 3}
-  - {fileID: 2800000, guid: a2aa94f5fb7abb74fa2f64bf2e626d95, type: 3}
-  - {fileID: 2800000, guid: f86283750a26d034ca27f24aa5746a62, type: 3}
-  "fps\u0410\u043D\u0438\u043C\u0430\u0446\u0438\u0438": 12
+    front:
+    - {fileID: 2800000, guid: 5ca213b7e01dd9841ad7e8c19d914795, type: 3}
+    - {fileID: 2800000, guid: 70dec4ef7ef28bb49ad12d966b07c200, type: 3}
+    - {fileID: 2800000, guid: 6c5a74173b406f4479b3221b2650f73b, type: 3}
+    - {fileID: 2800000, guid: b5cfc6bdf7df98b4dbf90e0880d9cf84, type: 3}
+    frontSide:
+    - {fileID: 2800000, guid: adf3b0fe97145b04499adb8759dba577, type: 3}
+    - {fileID: 2800000, guid: 66068f2bed5252a42b9c43f6beef2140, type: 3}
+    - {fileID: 2800000, guid: 7c350eb4f6910824bb6cfde456cc35e7, type: 3}
+    - {fileID: 2800000, guid: d6903f16f6b1f224bb56b9db4829bad9, type: 3}
+    side:
+    - {fileID: 2800000, guid: 9a6723ed0e9504c44a47520196d2afb3, type: 3}
+    - {fileID: 2800000, guid: a95b7120c1bb2f54995ca889f9d2daa3, type: 3}
+    - {fileID: 2800000, guid: a2aa94f5fb7abb74fa2f64bf2e626d95, type: 3}
+    - {fileID: 2800000, guid: f86283750a26d034ca27f24aa5746a62, type: 3}
+    backSide:
+    - {fileID: 2800000, guid: ce095fe375843fa4d8dc2fbe00aa2953, type: 3}
+    - {fileID: 2800000, guid: c62bd85164d29dd4fa4ca2fd91a0381c, type: 3}
+    - {fileID: 2800000, guid: ff544d551d818bc448ff275504dc9ae0, type: 3}
+    - {fileID: 2800000, guid: 50a729139704f7045bbb6097980497e4, type: 3}
+    back:
+    - {fileID: 2800000, guid: 0b702a4a2cb4edd44898417501c02801, type: 3}
+    - {fileID: 2800000, guid: 5df05b8ad6438474e82fa80c432ae061, type: 3}
+    - {fileID: 2800000, guid: 99f7b5e491c621a41a66dc230c189a9f, type: 3}
+    - {fileID: 2800000, guid: 57f7d302535f7304eb3212fdd5c47edf, type: 3}
+  "fps\u0410\u043D\u0438\u043C\u0430\u0446\u0438\u0438": 10
   "\u043F\u0430\u043F\u043A\u0430\u041A\u0430\u0434\u0440\u043E\u0432": Assets/sprite/16x32/frames_16x32/Interact
   "\u0448\u0440\u0438\u0444\u0442": {fileID: 12800000, guid: e19754fc328243b4586d891d63b18ee9, type: 3}
   "\u0440\u0430\u0437\u043C\u0435\u0440\u0428\u0440\u0438\u0444\u0442\u0430": 35

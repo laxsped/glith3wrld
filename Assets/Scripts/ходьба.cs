@@ -430,6 +430,30 @@ public class PlayerWASDAnimator : MonoBehaviour
         }
     }
 
+    public string GetFacingDirectionId()
+    {
+        switch (currentDirection)
+        {
+            case FacingDirection.Front:
+                return "front";
+            case FacingDirection.FrontSide:
+                return "frontSide";
+            case FacingDirection.Side:
+                return "side";
+            case FacingDirection.BackSide:
+                return "backSide";
+            case FacingDirection.Back:
+                return "back";
+            default:
+                return "front";
+        }
+    }
+
+    public void ForceRefreshCurrentFrame()
+    {
+        ApplyCurrentFrame();
+    }
+
     private static Vector2 ReadMovementInput()
     {
         float x = 0f;
