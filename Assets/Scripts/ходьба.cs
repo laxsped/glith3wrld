@@ -8,6 +8,7 @@ public class PlayerWASDAnimator : MonoBehaviour
     [SerializeField] private float rightScaleX = 0.05f;
     [SerializeField] private float leftScaleX = -0.05f;
     [SerializeField] private bool lockVerticalInput;
+    [SerializeField] private float collisionSkin = 0.01f;
 
     [Header("Render Target")]
     [SerializeField] private Renderer targetRenderer;
@@ -152,7 +153,38 @@ public class PlayerWASDAnimator : MonoBehaviour
 
         if (rb != null)
         {
-            rb.MovePosition(rb.position + step);
+            Vector3 nextPosition = rb.position + step;
+            float stepDistance = step.magnitude;
+            if (stepDistance > 0.0001f && rb.SweepTest(step.normalized, out RaycastHit hit, stepDistance + collisionSkin, QueryTriggerInteraction.Ignore))
+            {
+                float safeDistance = Mathf.Max(0f, hit.distance - collisionSkin);
+                Vector3 basePosition = rb.position + step.normalized * safeDistance;
+
+                // Slide along the hit surface instead of stopping dead in corners.
+                Vector3 remaining = step - (step.normalized * safeDistance);
+                Vector3 slideVector = Vector3.ProjectOnPlane(remaining, hit.normal);
+                float slideDistance = slideVector.magnitude;
+
+                if (slideDistance > 0.0001f)
+                {
+                    Vector3 slideDir = slideVector / slideDistance;
+                    if (rb.SweepTest(slideDir, out RaycastHit slideHit, slideDistance + collisionSkin, QueryTriggerInteraction.Ignore))
+                    {
+                        float safeSlide = Mathf.Max(0f, slideHit.distance - collisionSkin);
+                        nextPosition = basePosition + slideDir * safeSlide;
+                    }
+                    else
+                    {
+                        nextPosition = basePosition + slideVector;
+                    }
+                }
+                else
+                {
+                    nextPosition = basePosition;
+                }
+            }
+
+            rb.MovePosition(nextPosition);
         }
         else
         {
@@ -373,6 +405,8 @@ public class PlayerWASDAnimator : MonoBehaviour
         {
             leftScaleX = -0.05f;
         }
+
+        collisionSkin = Mathf.Clamp(collisionSkin, 0.001f, 0.05f);
     }
 
     private void Start()

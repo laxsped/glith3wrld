@@ -26,6 +26,7 @@ public class SurfaceMovementAudio : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float jumpVolume = 0.75f;
     [SerializeField] [Range(0f, 1f)] private float landVolume = 0.85f;
     [SerializeField] [Range(-3f, 3f)] private float pitchRandomRange = 0.06f;
+    [SerializeField] [Range(0f, 2f)] private float masterVolume = 1f;
 
     [Header("Surface Audio")]
     [SerializeField] private SurfaceAudioSet defaultSurface = new SurfaceAudioSet { id = "Default" };
@@ -45,7 +46,7 @@ public class SurfaceMovementAudio : MonoBehaviour
     public class SurfaceAudioSet
     {
         public string id;
-        public PhysicMaterial physicMaterial;
+        public PhysicsMaterial physicMaterial;
         public string surfaceTag;
         public LayerMask layerMask;
         public AudioClip[] walk;
@@ -89,13 +90,19 @@ public class SurfaceMovementAudio : MonoBehaviour
     private void Update()
     {
         bool groundedNow = TryGetGroundHit(out RaycastHit hit);
-        Vector3 horizontalVelocity = targetRigidbody != null
-            ? new Vector3(targetRigidbody.linearVelocity.x, 0f, targetRigidbody.linearVelocity.z)
-            : Vector3.zero;
+        Vector2 moveInput = ReadMoveInput();
+        bool hasMoveInput = moveInput.sqrMagnitude > 0.001f;
 
-        bool hasHorizontalMotion = horizontalVelocity.magnitude >= minHorizontalSpeed;
+        Vector3 horizontalVelocity = Vector3.zero;
+        if (targetRigidbody != null)
+        {
+            Vector3 rbVelocity = targetRigidbody.linearVelocity;
+            horizontalVelocity = new Vector3(rbVelocity.x, 0f, rbVelocity.z);
+        }
+
+        bool hasHorizontalMotion = horizontalVelocity.magnitude >= minHorizontalSpeed || hasMoveInput;
         bool runPressed = !GameInputBindings.RunLocked && Input.GetKey(GameInputBindings.RunKey);
-        bool runAllowedByInput = runPressed && HasMoveInput();
+        bool runAllowedByInput = runPressed && hasMoveInput;
 
         if (groundedNow && !wasGrounded)
         {
@@ -127,12 +134,29 @@ public class SurfaceMovementAudio : MonoBehaviour
         wasGrounded = groundedNow;
     }
 
-    private bool HasMoveInput()
+    private static Vector2 ReadMoveInput()
     {
-        return Input.GetKey(GameInputBindings.LeftKey)
-               || Input.GetKey(GameInputBindings.RightKey)
-               || Input.GetKey(GameInputBindings.ForwardKey)
-               || Input.GetKey(GameInputBindings.BackwardKey);
+        float x = 0f;
+        float y = 0f;
+
+        if (Input.GetKey(GameInputBindings.LeftKey))
+        {
+            x -= 1f;
+        }
+        if (Input.GetKey(GameInputBindings.RightKey))
+        {
+            x += 1f;
+        }
+        if (Input.GetKey(GameInputBindings.ForwardKey))
+        {
+            y += 1f;
+        }
+        if (Input.GetKey(GameInputBindings.BackwardKey))
+        {
+            y -= 1f;
+        }
+
+        return new Vector2(x, y);
     }
 
     private bool TryGetGroundHit(out RaycastHit hit)
@@ -177,7 +201,7 @@ public class SurfaceMovementAudio : MonoBehaviour
         }
 
         audioSource.pitch = 1f + UnityEngine.Random.Range(-pitchRandomRange, pitchRandomRange);
-        audioSource.PlayOneShot(clip, volume);
+        audioSource.PlayOneShot(clip, volume * masterVolume);
     }
 
     private AudioClip GetRandomClip(SurfaceAudioSet set, FootEvent footEvent)
@@ -281,5 +305,15 @@ public class SurfaceMovementAudio : MonoBehaviour
                 byId.Add(s.id.Trim(), s);
             }
         }
+    }
+
+    public void SetMasterVolume(float value)
+    {
+        masterVolume = Mathf.Clamp(value, 0f, 2f);
+    }
+
+    public float GetMasterVolume()
+    {
+        return Mathf.Max(0f, masterVolume);
     }
 }

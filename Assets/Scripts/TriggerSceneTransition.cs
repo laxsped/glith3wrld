@@ -63,6 +63,13 @@ public class TriggerSceneTransition : MonoBehaviour
     {
         DontDestroyOnLoad(gameObject);
         BuildUi();
+        string sceneToLoad = NormalizeSceneName(targetSceneName);
+
+        if (!Application.CanStreamedLevelBeLoaded(sceneToLoad))
+        {
+            Debug.LogError($"[TriggerSceneTransition] Scene '{sceneToLoad}' is not loadable. Add it to Build Settings (File > Build Settings > Scenes In Build).", this);
+            yield break;
+        }
 
         float t = 0f;
         while (t < fadeDuration)
@@ -77,9 +84,10 @@ public class TriggerSceneTransition : MonoBehaviour
         Coroutine loadingRoutine = StartCoroutine(AnimateLoading());
         float minEndTime = Time.unscaledTime + Mathf.Max(0f, minimumLoadingScreenTime);
 
-        AsyncOperation op = SceneManager.LoadSceneAsync(targetSceneName, LoadSceneMode.Single);
+        AsyncOperation op = SceneManager.LoadSceneAsync(sceneToLoad, LoadSceneMode.Single);
         if (op == null)
         {
+            Debug.LogError($"[TriggerSceneTransition] LoadSceneAsync returned null for scene '{sceneToLoad}'.", this);
             yield break;
         }
 
@@ -205,6 +213,22 @@ public class TriggerSceneTransition : MonoBehaviour
 
             yield return null;
         }
+    }
+
+    private static string NormalizeSceneName(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+        {
+            return string.Empty;
+        }
+
+        string normalized = sceneName.Trim();
+        if (normalized.EndsWith(".unity", System.StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = System.IO.Path.GetFileNameWithoutExtension(normalized);
+        }
+
+        return normalized;
     }
 
 #if UNITY_EDITOR

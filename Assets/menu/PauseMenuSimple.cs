@@ -40,6 +40,7 @@ public class PauseMenuSimple : MonoBehaviour
     [SerializeField] private AudioSource menuAudioSource;
     [SerializeField] private WindNoiseGenerator windNoise;
     [SerializeField] private GrassFootstepNoise grassSteps;
+    [SerializeField] private SurfaceMovementAudio surfaceMovementAudio;
 
     private const string PrefPrefix = "PauseSimple.";
     private const string KeyIconDirectory = "Assets/ICONS/Controls/keyboard-mouse-input-icons-251008/keyboard-input-icons/";
@@ -823,6 +824,10 @@ public class PauseMenuSimple : MonoBehaviour
         {
             grassSteps = UnityEngine.Object.FindFirstObjectByType<GrassFootstepNoise>();
         }
+        if (surfaceMovementAudio == null)
+        {
+            surfaceMovementAudio = UnityEngine.Object.FindFirstObjectByType<SurfaceMovementAudio>();
+        }
 
         if (menuAudioSource == null)
         {
@@ -831,7 +836,14 @@ public class PauseMenuSimple : MonoBehaviour
 
         // Capture baseline levels for 100% mapping.
         environmentBaseVolume = windNoise != null ? Mathf.Max(0.0001f, windNoise.GetMasterVolume()) : 1f;
-        effectsBaseVolume = grassSteps != null ? Mathf.Max(0.0001f, grassSteps.GetMasterVolume()) : 1f;
+        if (surfaceMovementAudio != null)
+        {
+            effectsBaseVolume = Mathf.Max(0.0001f, surfaceMovementAudio.GetMasterVolume());
+        }
+        else
+        {
+            effectsBaseVolume = grassSteps != null ? Mathf.Max(0.0001f, grassSteps.GetMasterVolume()) : 1f;
+        }
         menuBaseVolume = menuAudioSource != null ? Mathf.Max(0.0001f, menuAudioSource.volume) : 1f;
     }
 
@@ -1518,9 +1530,15 @@ public class PauseMenuSimple : MonoBehaviour
 
     private void ApplyEffectsVolume()
     {
+        float value = effectsBaseVolume * (effectsVolumeLevel / 10f);
+
+        if (surfaceMovementAudio != null)
+        {
+            surfaceMovementAudio.SetMasterVolume(value);
+        }
+
         if (grassSteps != null)
         {
-            float value = effectsBaseVolume * (effectsVolumeLevel / 10f);
             grassSteps.SetMasterVolume(value);
         }
     }

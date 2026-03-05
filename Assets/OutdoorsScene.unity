@@ -10395,7 +10395,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b5cd38990f7df7641a074e17d8d76327, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TriggerSceneTransition
-  targetSceneName: 2
+  targetSceneName: scene2do
   fadeDuration: 0.35
   fadeColor: {r: 0, g: 0, b: 0, a: 1}
   minimumLoadingScreenTime: 2
