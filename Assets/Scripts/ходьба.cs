@@ -42,6 +42,8 @@ public class PlayerWASDAnimator : MonoBehaviour
     private bool cachedJumpPressed;
     private bool isGrounded;
     private bool inputEnabled = true;
+    private bool hasExternalSpeedCap;
+    private float externalSpeedCap = float.PositiveInfinity;
 
     private enum AnimState
     {
@@ -149,6 +151,10 @@ public class PlayerWASDAnimator : MonoBehaviour
             : new Vector3(input.x, input.y, 0f);
 
         float speed = isRunning ? moveSpeed * runSpeedMultiplier : moveSpeed;
+        if (hasExternalSpeedCap)
+        {
+            speed = Mathf.Min(speed, Mathf.Max(0f, externalSpeedCap));
+        }
         Vector3 step = delta * speed * Time.fixedDeltaTime;
 
         if (rb != null)
@@ -452,6 +458,18 @@ public class PlayerWASDAnimator : MonoBehaviour
     public void ForceRefreshCurrentFrame()
     {
         ApplyCurrentFrame();
+    }
+
+    public void SetExternalSpeedCap(float maxSpeed)
+    {
+        hasExternalSpeedCap = true;
+        externalSpeedCap = Mathf.Max(0f, maxSpeed);
+    }
+
+    public void ClearExternalSpeedCap()
+    {
+        hasExternalSpeedCap = false;
+        externalSpeedCap = float.PositiveInfinity;
     }
 
     private static Vector2 ReadMovementInput()
