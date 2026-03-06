@@ -111,6 +111,7 @@ public class PauseMenuSimple : MonoBehaviour
     private Text brightnessRowLabel;
     private Text contrastRowLabel;
     private Text qualityRowLabel;
+    private Text characterLightingRowLabel;
 
     private readonly Dictionary<BindingAction, KeybindRowUi> keybindRows = new Dictionary<BindingAction, KeybindRowUi>();
     private readonly Dictionary<KeyCode, Sprite> keyIconCache = new Dictionary<KeyCode, Sprite>();
@@ -142,6 +143,8 @@ public class PauseMenuSimple : MonoBehaviour
     private Text hdrValueText;
     private Button qualityButton;
     private Text qualityValueText;
+    private Button characterLightingButton;
+    private Text characterLightingValueText;
 
     private Slider brightnessSlider;
     private Text brightnessValueText;
@@ -159,6 +162,10 @@ public class PauseMenuSimple : MonoBehaviour
 
     private bool isOpen;
     private SettingsSection currentSection = SettingsSection.General;
+    private RectTransform dropdownPopupRoot;
+    private bool dropdownPopupOpen;
+    private readonly List<Button> dropdownPopupButtons = new List<Button>();
+    private Action<int> dropdownPopupOnSelect;
 
     // 0 - english, 1 - русский
     private int languageIndex = 1;
@@ -176,6 +183,8 @@ public class PauseMenuSimple : MonoBehaviour
     private int vSyncIndex;
     private int hdrIndex = 1;
     private int graphicsQualityIndex = 1;
+    // 0 - classic (unlit), 1 - modern (lit)
+    private int characterLightingMode = 0;
 
     // HDRP color settings
     private float brightnessExposure;
@@ -237,6 +246,16 @@ public class PauseMenuSimple : MonoBehaviour
         {
             SetOpen(!isOpen);
         }
+
+        if (dropdownPopupOpen && Input.GetMouseButtonDown(0) && dropdownPopupRoot != null)
+        {
+            Vector2 mouse = Input.mousePosition;
+            if (!RectTransformUtility.RectangleContainsScreenPoint(dropdownPopupRoot, mouse, null))
+            {
+                CloseDropdownPopup();
+            }
+        }
+
     }
 
     private void OnDestroy()
@@ -268,6 +287,7 @@ public class PauseMenuSimple : MonoBehaviour
 
         if (!open)
         {
+            CloseDropdownPopup();
             CancelRebind();
         }
 
@@ -396,20 +416,20 @@ public class PauseMenuSimple : MonoBehaviour
 
         yGeneral -= 78f;
         accessibilityTitleText = CreateHeader(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), sectionFont, menuFontSize - 12);
-        yGeneral -= 58f;
+        yGeneral -= 66f;
         CreateCycleRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, OnLanguagePressed, out languageRowLabel, out languageButton, out languageValueText);
-        yGeneral -= 52f;
+        yGeneral -= 60f;
         CreateCycleRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, OnColorBlindPressed, out colorBlindRowLabel, out colorBlindButton, out colorBlindValueText);
 
-        yGeneral -= 74f;
+        yGeneral -= 84f;
         audioTitleText = CreateHeader(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), sectionFont, menuFontSize - 12);
-        yGeneral -= 58f;
+        yGeneral -= 66f;
         CreateSliderRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, 0f, 10f, true, OnMasterVolumeChanged, out masterVolumeRowLabel, out masterVolumeSlider, out masterVolumeValueText);
-        yGeneral -= 52f;
+        yGeneral -= 60f;
         CreateSliderRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, 0f, 10f, true, OnEnvironmentVolumeChanged, out environmentVolumeRowLabel, out environmentVolumeSlider, out environmentVolumeValueText);
-        yGeneral -= 52f;
+        yGeneral -= 60f;
         CreateSliderRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, 0f, 10f, true, OnMenuVolumeChanged, out menuVolumeRowLabel, out menuVolumeSlider, out menuVolumeValueText);
-        yGeneral -= 52f;
+        yGeneral -= 60f;
         CreateSliderRow(generalSectionRoot, new Vector2(settingsLabelX, yGeneral), itemsFont, 0f, 10f, true, OnEffectsVolumeChanged, out effectsVolumeRowLabel, out effectsVolumeSlider, out effectsVolumeValueText);
 
         float yVisual = -90f;
@@ -417,25 +437,27 @@ public class PauseMenuSimple : MonoBehaviour
 
         yVisual -= 70f;
         screenTitleText = CreateHeader(visualSectionRoot, new Vector2(settingsLabelX, yVisual), sectionFont, menuFontSize - 12);
-        yVisual -= 58f;
+        yVisual -= 66f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnResolutionPressed, out resolutionRowLabel, out resolutionButton, out resolutionValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnWindowModePressed, out windowModeRowLabel, out windowModeButton, out windowModeValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnFpsPressed, out fpsRowLabel, out fpsButton, out fpsValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnVsyncPressed, out vsyncRowLabel, out vsyncButton, out vsyncValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnHdrPressed, out hdrRowLabel, out hdrButton, out hdrValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateSliderRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, -2f, 2f, false, OnBrightnessChanged, out brightnessRowLabel, out brightnessSlider, out brightnessValueText);
-        yVisual -= 52f;
+        yVisual -= 60f;
         CreateSliderRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, -100f, 100f, false, OnContrastChanged, out contrastRowLabel, out contrastSlider, out contrastValueText);
 
-        yVisual -= 74f;
+        yVisual -= 84f;
         graphicsTitleText = CreateHeader(visualSectionRoot, new Vector2(settingsLabelX, yVisual), sectionFont, menuFontSize - 12);
-        yVisual -= 58f;
+        yVisual -= 66f;
         CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnGraphicsQualityPressed, out qualityRowLabel, out qualityButton, out qualityValueText);
+        yVisual -= 60f;
+        CreateCycleRow(visualSectionRoot, new Vector2(settingsLabelX, yVisual), itemsFont, OnCharacterLightingPressed, out characterLightingRowLabel, out characterLightingButton, out characterLightingValueText);
 
         float yControls = -90f;
         controlsSectionTitleText = CreateHeader(controlsSectionRoot, new Vector2(settingsLabelX, yControls), sectionFont, menuFontSize - 2);
@@ -527,6 +549,7 @@ public class PauseMenuSimple : MonoBehaviour
             controlsSectionButtonLabel.color = currentSection == SettingsSection.Controls ? Color.white : new Color(0.72f, 0.72f, 0.72f, 1f);
         }
     }
+
 
     private Button CreateTextButton(Transform parent, string objectName, Vector2 anchoredPosition, out Text label, Font font, int size)
     {
@@ -629,6 +652,7 @@ public class PauseMenuSimple : MonoBehaviour
         value.color = Color.white;
         value.raycastTarget = false;
     }
+
 
     private void CreateKeybindRow(Transform parent, Vector2 anchoredPosition, Font itemsFont, BindingAction action)
     {
@@ -951,6 +975,7 @@ public class PauseMenuSimple : MonoBehaviour
         vSyncIndex = Mathf.Clamp(PlayerPrefs.GetInt(PrefPrefix + "vsync", QualitySettings.vSyncCount > 0 ? 1 : 0), 0, 1);
         hdrIndex = Mathf.Clamp(PlayerPrefs.GetInt(PrefPrefix + "hdr", 1), 0, 1);
         graphicsQualityIndex = Mathf.Clamp(PlayerPrefs.GetInt(PrefPrefix + "graphics_quality", 1), 0, 2);
+        characterLightingMode = Mathf.Clamp(PlayerPrefs.GetInt(PrefPrefix + "character_lighting", 0), 0, 1);
 
         brightnessExposure = Mathf.Clamp(PlayerPrefs.GetFloat(PrefPrefix + "brightness_ev", 0f), -2f, 2f);
         contrastAmount = Mathf.Clamp(PlayerPrefs.GetFloat(PrefPrefix + "contrast", 0f), -100f, 100f);
@@ -964,6 +989,7 @@ public class PauseMenuSimple : MonoBehaviour
         ApplyEffectsVolume();
 
         ApplyGraphicsQuality();
+        ApplyCharacterLighting();
         ApplyWindowMode();
         ApplyResolution();
         ApplyFpsLimit();
@@ -997,6 +1023,7 @@ public class PauseMenuSimple : MonoBehaviour
         SetTextSafe(vsyncValueText, vSyncIndex == 1 ? (IsEnglish ? "on" : "вкл") : (IsEnglish ? "off" : "выкл"));
         SetTextSafe(hdrValueText, hdrIndex == 1 ? (IsEnglish ? "on" : "вкл") : (IsEnglish ? "off" : "выкл"));
         SetTextSafe(qualityValueText, GetGraphicsQualityLabel());
+        SetTextSafe(characterLightingValueText, GetCharacterLightingLabel());
         RefreshKeybindRows();
     }
 
@@ -1035,6 +1062,7 @@ public class PauseMenuSimple : MonoBehaviour
             SetTextSafe(brightnessRowLabel, "brightness");
             SetTextSafe(contrastRowLabel, "contrast");
             SetTextSafe(qualityRowLabel, "quality");
+            SetTextSafe(characterLightingRowLabel, "character lighting");
         }
         else
         {
@@ -1069,6 +1097,7 @@ public class PauseMenuSimple : MonoBehaviour
             SetTextSafe(brightnessRowLabel, "яркость");
             SetTextSafe(contrastRowLabel, "контраст");
             SetTextSafe(qualityRowLabel, "качество");
+            SetTextSafe(characterLightingRowLabel, "освещение персонажа");
         }
 
         SetTextSafe(languageValueText, languageIndex == 0 ? "english" : "русский");
@@ -1078,6 +1107,7 @@ public class PauseMenuSimple : MonoBehaviour
         SetTextSafe(vsyncValueText, vSyncIndex == 1 ? (IsEnglish ? "on" : "вкл") : (IsEnglish ? "off" : "выкл"));
         SetTextSafe(hdrValueText, hdrIndex == 1 ? (IsEnglish ? "on" : "вкл") : (IsEnglish ? "off" : "выкл"));
         SetTextSafe(qualityValueText, GetGraphicsQualityLabel());
+        SetTextSafe(characterLightingValueText, GetCharacterLightingLabel());
         RefreshKeybindRows();
         UpdateSectionTabVisuals();
     }
@@ -1479,6 +1509,14 @@ public class PauseMenuSimple : MonoBehaviour
         SetTextSafe(qualityValueText, GetGraphicsQualityLabel());
     }
 
+    private void OnCharacterLightingPressed()
+    {
+        characterLightingMode = characterLightingMode == 0 ? 1 : 0;
+        PlayerPrefs.SetInt(PrefPrefix + "character_lighting", characterLightingMode);
+        ApplyCharacterLighting();
+        SetTextSafe(characterLightingValueText, GetCharacterLightingLabel());
+    }
+
     private void OnMasterVolumeChanged(float value)
     {
         masterVolumeLevel = Mathf.Clamp(Mathf.RoundToInt(value), 0, 10);
@@ -1573,13 +1611,39 @@ public class PauseMenuSimple : MonoBehaviour
         QualitySettings.renderPipeline = asset;
     }
 
+    private void ApplyCharacterLighting()
+    {
+        PlayerPrefs.SetInt(PrefPrefix + "character_lighting", characterLightingMode);
+        PlayerPrefs.Save();
+    }
+
+    private string GetCharacterLightingLabel()
+    {
+        if (IsEnglish)
+        {
+            return characterLightingMode == 0 ? "classic" : "modern";
+        }
+
+        return characterLightingMode == 0 ? "классический" : "современный";
+    }
+
     private void OnResolutionPressed()
     {
-        resolutionIndex = (resolutionIndex + 1) % availableResolutions.Count;
-        PlayerPrefs.SetInt(PrefPrefix + "resolution_w", availableResolutions[resolutionIndex].x);
-        PlayerPrefs.SetInt(PrefPrefix + "resolution_h", availableResolutions[resolutionIndex].y);
-        ApplyResolution();
-        SetTextSafe(resolutionValueText, ResolutionLabel());
+        List<string> options = new List<string>(availableResolutions.Count);
+        for (int i = 0; i < availableResolutions.Count; i++)
+        {
+            Vector2Int r = availableResolutions[i];
+            options.Add($"{r.x} x {r.y}");
+        }
+
+        OpenDropdownPopup(resolutionButton, options, resolutionIndex, index =>
+        {
+            resolutionIndex = Mathf.Clamp(index, 0, availableResolutions.Count - 1);
+            PlayerPrefs.SetInt(PrefPrefix + "resolution_w", availableResolutions[resolutionIndex].x);
+            PlayerPrefs.SetInt(PrefPrefix + "resolution_h", availableResolutions[resolutionIndex].y);
+            ApplyResolution();
+            SetTextSafe(resolutionValueText, ResolutionLabel());
+        });
     }
 
     private void OnWindowModePressed()
@@ -1592,11 +1656,142 @@ public class PauseMenuSimple : MonoBehaviour
 
     private void OnFpsPressed()
     {
-        fpsIndex = (fpsIndex + 1) % fpsOptions.Length;
-        PlayerPrefs.SetInt(PrefPrefix + "fps_index", fpsIndex);
-        ApplyFpsLimit();
-        SetTextSafe(fpsValueText, fpsOptions[fpsIndex] < 0 ? (IsEnglish ? "unlimited" : "безлимит") : fpsOptions[fpsIndex].ToString());
+        List<string> options = new List<string>(fpsOptions.Length);
+        for (int i = 0; i < fpsOptions.Length; i++)
+        {
+            int fps = fpsOptions[i];
+            options.Add(fps < 0 ? (IsEnglish ? "unlimited" : "безлимит") : fps.ToString());
+        }
+
+        OpenDropdownPopup(fpsButton, options, fpsIndex, index =>
+        {
+            fpsIndex = Mathf.Clamp(index, 0, fpsOptions.Length - 1);
+            PlayerPrefs.SetInt(PrefPrefix + "fps_index", fpsIndex);
+            ApplyFpsLimit();
+            SetTextSafe(fpsValueText, fpsOptions[fpsIndex] < 0 ? (IsEnglish ? "unlimited" : "безлимит") : fpsOptions[fpsIndex].ToString());
+        });
     }
+
+    private void OpenDropdownPopup(Button sourceButton, List<string> options, int selectedIndex, Action<int> onSelect)
+    {
+        if (sourceButton == null || settingsRoot == null || options == null || options.Count == 0)
+        {
+            return;
+        }
+
+        EnsureDropdownPopup();
+        CloseDropdownPopup();
+
+        dropdownPopupOnSelect = onSelect;
+
+        RectTransform sourceRect = sourceButton.GetComponent<RectTransform>();
+        Vector3[] corners = new Vector3[4];
+        sourceRect.GetWorldCorners(corners);
+        Vector2 screenTopLeft = RectTransformUtility.WorldToScreenPoint(null, corners[1]);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(settingsRoot, screenTopLeft, null, out Vector2 localTopLeft);
+
+        float rowHeight = 34f;
+        float popupHeight = Mathf.Clamp(options.Count * rowHeight + 10f, 80f, 340f);
+        dropdownPopupRoot.sizeDelta = new Vector2(430f, popupHeight);
+
+        float x = settingsValueX;
+        float y = localTopLeft.y - 6f;
+
+        RectTransform rootRect = settingsRoot;
+        float topLimit = -6f;
+        float bottomLimit = -rootRect.rect.height + popupHeight + 8f;
+        y = Mathf.Clamp(y, bottomLimit, topLimit);
+
+        dropdownPopupRoot.anchoredPosition = new Vector2(x, y);
+        dropdownPopupRoot.SetAsLastSibling();
+
+        Font f = ResolveSettingsItemsFont(customFont != null ? customFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+        for (int i = 0; i < options.Count; i++)
+        {
+            int idx = i;
+            GameObject rowGo = new GameObject("Option " + i, typeof(RectTransform), typeof(Button), typeof(Image));
+            rowGo.transform.SetParent(dropdownPopupRoot, false);
+            RectTransform rr = rowGo.GetComponent<RectTransform>();
+            rr.anchorMin = new Vector2(0f, 1f);
+            rr.anchorMax = new Vector2(1f, 1f);
+            rr.pivot = new Vector2(0.5f, 1f);
+            rr.anchoredPosition = new Vector2(0f, -6f - i * rowHeight);
+            rr.sizeDelta = new Vector2(0f, rowHeight - 2f);
+
+            Image bg = rowGo.GetComponent<Image>();
+            bg.color = i == selectedIndex ? new Color(1f, 1f, 1f, 0.2f) : new Color(1f, 1f, 1f, 0.07f);
+
+            Button btn = rowGo.GetComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() =>
+            {
+                dropdownPopupOnSelect?.Invoke(idx);
+                CloseDropdownPopup();
+            });
+
+            GameObject txtGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
+            txtGo.transform.SetParent(rowGo.transform, false);
+            RectTransform tr = txtGo.GetComponent<RectTransform>();
+            tr.anchorMin = Vector2.zero;
+            tr.anchorMax = Vector2.one;
+            tr.offsetMin = new Vector2(10f, 0f);
+            tr.offsetMax = new Vector2(-10f, 0f);
+            Text t = txtGo.GetComponent<Text>();
+            t.font = f;
+            t.fontSize = settingsItemFontSize;
+            t.alignment = TextAnchor.MiddleLeft;
+            t.color = Color.white;
+            t.text = options[i];
+            t.raycastTarget = false;
+
+            dropdownPopupButtons.Add(btn);
+        }
+
+        dropdownPopupOpen = true;
+        dropdownPopupRoot.gameObject.SetActive(true);
+    }
+
+    private void EnsureDropdownPopup()
+    {
+        if (dropdownPopupRoot != null)
+        {
+            return;
+        }
+
+        GameObject popupGo = new GameObject("Dropdown Popup", typeof(RectTransform), typeof(Image));
+        popupGo.transform.SetParent(settingsRoot, false);
+        dropdownPopupRoot = popupGo.GetComponent<RectTransform>();
+        dropdownPopupRoot.anchorMin = new Vector2(0f, 1f);
+        dropdownPopupRoot.anchorMax = new Vector2(0f, 1f);
+        dropdownPopupRoot.pivot = new Vector2(0f, 1f);
+        dropdownPopupRoot.sizeDelta = new Vector2(430f, 200f);
+        Image bg = popupGo.GetComponent<Image>();
+        bg.color = new Color(0f, 0f, 0f, 0.92f);
+        bg.raycastTarget = true;
+        dropdownPopupRoot.gameObject.SetActive(false);
+    }
+
+    private void CloseDropdownPopup()
+    {
+        if (dropdownPopupRoot == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < dropdownPopupButtons.Count; i++)
+        {
+            if (dropdownPopupButtons[i] != null)
+            {
+                Destroy(dropdownPopupButtons[i].gameObject);
+            }
+        }
+        dropdownPopupButtons.Clear();
+        dropdownPopupOnSelect = null;
+        dropdownPopupOpen = false;
+        dropdownPopupRoot.gameObject.SetActive(false);
+    }
+
+
 
     private void OnVsyncPressed()
     {

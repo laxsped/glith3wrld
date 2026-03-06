@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -30,6 +31,8 @@ public class ТащимыйКуб : MonoBehaviour
     [SerializeField] private float демпферВращения = 12f;
 
     [Header("Звук по полу")]
+    [SerializeField] private bool использоватьПроцедурныйСкрежет = true;
+    [SerializeField] private СкрежетТяги процедурныйСкрежет;
     [SerializeField] private AudioSource источникЗвука;
     [SerializeField] private AudioClip[] звукиСкольжения;
     [SerializeField] private float интервалЗвука = 0.16f;
@@ -42,6 +45,11 @@ public class ТащимыйКуб : MonoBehaviour
     [SerializeField] private Font fallbackFont;
     [SerializeField] private int fallbackFontSize = 20;
 
+    [Header("Дымка")]
+    [SerializeField] private ParticleSystem мягкаяДымка;
+    [SerializeField] private float задержкаДымки = 1.1f;
+    [SerializeField] private List<KeyIconEntry> keyIcons = new List<KeyIconEntry>();
+
     [Header("Debug")]
     [SerializeField] private bool debugLogs;
     [SerializeField] private float debugInterval = 0.25f;
@@ -50,20 +58,23 @@ public class ТащимыйКуб : MonoBehaviour
     private Transform игрок;
     private Rigidbody rbИгрока;
     private PlayerWASDAnimator аниматорИгрока;
-    private bool игрокРядом;
     private bool игрокВнутриТриггера;
     private bool тащится;
     private bool блокПовторногоЗахватаДоОтпуска;
+    private bool владеетЛимитомСкорости;
     private float таймерЗвука;
     private bool прошлыйКадрПрыжок;
+    private float таймерТяги;
 
     private Canvas canvas;
     private Image иконка;
     private Text текстКлавиши;
     private Sprite иконкаСпрайт;
     private KeyCode кешКнопки = KeyCode.None;
+    private readonly Dictionary<KeyCode, Sprite> iconMap = new Dictionary<KeyCode, Sprite>();
     private float debugNextTime;
     private RigidbodyConstraints исходныеОграничения;
+    private static ТащимыйКуб activeDragCube;
 
     private void Awake()
     {
@@ -88,8 +99,13 @@ public class ТащимыйКуб : MonoBehaviour
         {
             источникЗвука = GetComponent<AudioSource>();
         }
+        if (процедурныйСкрежет == null)
+        {
+            процедурныйСкрежет = GetComponent<СкрежетТяги>();
+        }
 
         BuildUi();
+        BuildIconMap();
         UpdatePromptKeyVisual(true);
         SetPromptVisible(false);
     }
@@ -105,7 +121,6 @@ public class ТащимыйКуб : MonoBehaviour
             {
                 Debug.Log("[ТащимыйКуб] stop: игрок не рядом или null.", this);
             }
-            игрокРядом = false;
             игрокВнутриТриггера = false;
             StopDragging();
             return;
@@ -123,7 +138,16 @@ public class ТащимыйКуб : MonoBehaviour
 
         if (!игрокВнутриТриггера && !тащится)
         {
-            игрокРядом = false;
+            return;
+        }
+
+        // Only one cube can be dragged at a time.
+        if (activeDragCube != null && activeDragCube != this)
+        {
+            if (тащится)
+            {
+                StopDragging();
+            }
             return;
         }
 
@@ -143,6 +167,7 @@ public class ТащимыйКуб : MonoBehaviour
                 Debug.Log($"[ТащимыйКуб] start drag. key={GameInputBindings.ActionKey}", this);
             }
             тащится = true;
+            activeDragCube = this;
             ApplyDragConstraints(true);
             SetPromptVisible(false);
         }
@@ -163,6 +188,9 @@ public class ТащимыйКуб : MonoBehaviour
         {
             таймерЗвука = 0f;
             прошлыйКадрПрыжок = false;
+            таймерТяги = 0f;
+            UpdateDust(false);
+            UpdateProceduralScrape(false, 0f, false);
             return;
         }
 
@@ -184,17 +212,21 @@ public class ТащимыйКуб : MonoBehaviour
         Vector3 dirToPlayer = distToPlayer > 0.001f ? (cubeToPlayer / distToPlayer) : Vector3.zero;
 
         bool running = !GameInputBindings.RunLocked && Input.GetKey(GameInputBindings.RunKey);
+        Vector2 moveInput = ReadMoveInput();
+        bool hasMoveInput = moveInput.sqrMagnitude > 0.001f;
+
         float massFactor = Mathf.Max(0.35f, rb.mass);
         float targetMaxSpeed = (базоваяМаксСкорость / Mathf.Sqrt(massFactor)) * (running ? множительБега : 1f);
 
         Vector3 horizontalVel = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
         float pullScaleByDistance = Mathf.Clamp01(distToPlayer / Mathf.Max(0.25f, дистанцияДоИгрока + 0.2f));
-        float minPullScale = 0.35f;
-        if (distToPlayer < дистанцияДоИгрока * 0.9f)
+        float minPullScale = hasMoveInput ? 0.35f : 0f;
+        if (hasMoveInput && distToPlayer < дистанцияДоИгрока * 0.9f)
         {
             minPullScale = 0.18f;
         }
-        Vector3 desiredVel = dirToPlayer * (targetMaxSpeed * Mathf.Max(minPullScale, pullScaleByDistance));
+        float pullScale = hasMoveInput ? Mathf.Max(minPullScale, pullScaleByDistance) : 0f;
+        Vector3 desiredVel = dirToPlayer * (targetMaxSpeed * pullScale);
         Vector3 dv = desiredVel - horizontalVel;
 
         float accel = базовоеУскорениеТяги * (running ? 1.25f : 1f);
@@ -228,7 +260,22 @@ public class ТащимыйКуб : MonoBehaviour
             }
         }
 
-        PlayDragSound(horizontalVel.magnitude);
+        bool draggingMoving = hasMoveInput && horizontalVel.magnitude > минимумСкоростиДляЗвука;
+        if (draggingMoving)
+        {
+            таймерТяги += Time.fixedDeltaTime;
+        }
+        else
+        {
+            таймерТяги = 0f;
+        }
+
+        UpdateDust(таймерТяги >= задержкаДымки);
+        UpdateProceduralScrape(draggingMoving, horizontalVel.magnitude, running);
+        if (!использоватьПроцедурныйСкрежет)
+        {
+            PlayDragSound(horizontalVel.magnitude);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -248,13 +295,12 @@ public class ТащимыйКуб : MonoBehaviour
         {
             аниматорИгрока = игрок.GetComponent<PlayerWASDAnimator>();
         }
-        игрокРядом = true;
         игрокВнутриТриггера = true;
         if (debugLogs)
         {
             Debug.Log($"[ТащимыйКуб] trigger enter by '{other.name}'. rbPlayer={(rbИгрока != null)}", this);
         }
-        if (!Input.GetKey(GameInputBindings.ActionKey))
+        if (!Input.GetKey(GameInputBindings.ActionKey) && (activeDragCube == null || activeDragCube == this))
         {
             SetPromptVisible(true);
         }
@@ -284,7 +330,6 @@ public class ТащимыйКуб : MonoBehaviour
             return;
         }
 
-        игрокРядом = false;
         игрок = null;
         rbИгрока = null;
         if (debugLogs)
@@ -301,7 +346,6 @@ public class ТащимыйКуб : MonoBehaviour
         StopDragging();
         игрок = null;
         rbИгрока = null;
-        игрокРядом = false;
         игрокВнутриТриггера = false;
         блокПовторногоЗахватаДоОтпуска = false;
     }
@@ -313,20 +357,28 @@ public class ТащимыйКуб : MonoBehaviour
 
     private void StopDragging()
     {
-        if (аниматорИгрока != null)
+        if (activeDragCube == this)
+        {
+            activeDragCube = null;
+        }
+
+        if (владеетЛимитомСкорости && аниматорИгрока != null)
         {
             аниматорИгрока.ClearExternalSpeedCap();
+            владеетЛимитомСкорости = false;
         }
         if (!игрокВнутриТриггера)
         {
             игрок = null;
             rbИгрока = null;
-            игрокРядом = false;
             SetPromptVisible(false);
         }
         ApplyDragConstraints(false);
         тащится = false;
         прошлыйКадрПрыжок = false;
+        таймерТяги = 0f;
+        UpdateDust(false);
+        UpdateProceduralScrape(false, 0f, false);
     }
 
     private void ApplyPlayerSpeedSync(float cubeTargetSpeed, float cubeActualSpeed, float distanceToPlayer)
@@ -336,12 +388,23 @@ public class ТащимыйКуб : MonoBehaviour
             return;
         }
 
-        // Sync to real cube speed so player cannot run away when heavy cube accelerates slowly.
-        float byActual = cubeActualSpeed + 0.12f + Mathf.Clamp01(distanceToPlayer / Mathf.Max(0.2f, максДистанцияРазрыва)) * 0.12f;
-        float byTarget = cubeTargetSpeed * 0.95f;
+        // Hard anti-runaway sync:
+        // 1) primarily follow actual cube speed
+        // 2) when player is already too far, clamp to 0 until cube catches up
+        float softLimitDistance = дистанцияДоИгрока + 0.22f;
+        if (distanceToPlayer > softLimitDistance)
+        {
+            аниматорИгрока.SetExternalSpeedCap(0f);
+            владеетЛимитомСкорости = true;
+            return;
+        }
+
+        float byActual = cubeActualSpeed * 0.9f + 0.03f;
+        float byTarget = cubeTargetSpeed * 0.8f;
         float cap = Mathf.Min(byActual, byTarget);
-        cap = Mathf.Clamp(cap, 0.08f, cubeTargetSpeed);
+        cap = Mathf.Clamp(cap, 0f, cubeTargetSpeed);
         аниматорИгрока.SetExternalSpeedCap(cap);
+        владеетЛимитомСкорости = true;
     }
 
     private void ApplyDragConstraints(bool dragging)
@@ -393,6 +456,36 @@ public class ТащимыйКуб : MonoBehaviour
         float vol = Mathf.Clamp01(громкостьЗвука * effectsScale * Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(speed / 2.5f)));
         источникЗвука.pitch = Random.Range(0.96f, 1.04f);
         источникЗвука.PlayOneShot(clip, vol);
+    }
+
+    private void UpdateProceduralScrape(bool dragging, float speed, bool running)
+    {
+        if (!использоватьПроцедурныйСкрежет || процедурныйСкрежет == null)
+        {
+            return;
+        }
+
+        процедурныйСкрежет.SetDragState(dragging, speed, running, rb != null ? rb.mass : 1f);
+    }
+
+    private void UpdateDust(bool active)
+    {
+        if (мягкаяДымка == null)
+        {
+            return;
+        }
+
+        if (active)
+        {
+            if (!мягкаяДымка.isPlaying)
+            {
+                мягкаяДымка.Play();
+            }
+        }
+        else if (мягкаяДымка.isPlaying)
+        {
+            мягкаяДымка.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        }
     }
 
     private void BuildUi()
@@ -484,8 +577,13 @@ public class ТащимыйКуб : MonoBehaviour
 
     private Sprite LoadKeyIcon(KeyCode key)
     {
+        KeyCode normalized = NormalizeKey(key);
+        if (iconMap.TryGetValue(normalized, out Sprite icon) && icon != null)
+        {
+            return icon;
+        }
 #if UNITY_EDITOR
-        string slug = KeyToSlug(key);
+        string slug = KeyToSlug(normalized);
         if (!string.IsNullOrEmpty(slug))
         {
             return AssetDatabase.LoadAssetAtPath<Sprite>(IconBasePath + "key-" + slug + ".png");
@@ -520,6 +618,43 @@ public class ТащимыйКуб : MonoBehaviour
         }
     }
 
+    [System.Serializable]
+    private struct KeyIconEntry
+    {
+        public KeyCode key;
+        public Sprite sprite;
+    }
+
+    private void BuildIconMap()
+    {
+        iconMap.Clear();
+        for (int i = 0; i < keyIcons.Count; i++)
+        {
+            if (keyIcons[i].sprite == null)
+            {
+                continue;
+            }
+
+            KeyCode k = NormalizeKey(keyIcons[i].key);
+            if (!iconMap.ContainsKey(k))
+            {
+                iconMap.Add(k, keyIcons[i].sprite);
+            }
+        }
+    }
+
+    private static KeyCode NormalizeKey(KeyCode key)
+    {
+        switch (key)
+        {
+            case KeyCode.RightShift: return KeyCode.LeftShift;
+            case KeyCode.RightControl: return KeyCode.LeftControl;
+            case KeyCode.RightAlt: return KeyCode.LeftAlt;
+            case KeyCode.KeypadEnter: return KeyCode.Return;
+            default: return key;
+        }
+    }
+
     private Font ResolveFont()
     {
         if (fallbackFont != null)
@@ -543,5 +678,64 @@ public class ТащимыйКуб : MonoBehaviour
         множительБега = Mathf.Max(1f, множительБега);
         debugInterval = Mathf.Clamp(debugInterval, 0.05f, 2f);
         демпферВращения = Mathf.Clamp(демпферВращения, 0f, 60f);
+        задержкаДымки = Mathf.Clamp(задержкаДымки, 0f, 10f);
+#if UNITY_EDITOR
+        PopulateIconLibrary();
+        BuildIconMap();
+#endif
     }
+
+    private static Vector2 ReadMoveInput()
+    {
+        float x = 0f;
+        float y = 0f;
+        if (Input.GetKey(GameInputBindings.LeftKey)) x -= 1f;
+        if (Input.GetKey(GameInputBindings.RightKey)) x += 1f;
+        if (Input.GetKey(GameInputBindings.ForwardKey)) y += 1f;
+        if (Input.GetKey(GameInputBindings.BackwardKey)) y -= 1f;
+        return new Vector2(x, y);
+    }
+
+#if UNITY_EDITOR
+    private void PopulateIconLibrary()
+    {
+        EnsureIconEntry(KeyCode.A); EnsureIconEntry(KeyCode.B); EnsureIconEntry(KeyCode.C); EnsureIconEntry(KeyCode.D);
+        EnsureIconEntry(KeyCode.E); EnsureIconEntry(KeyCode.F); EnsureIconEntry(KeyCode.G); EnsureIconEntry(KeyCode.H);
+        EnsureIconEntry(KeyCode.I); EnsureIconEntry(KeyCode.J); EnsureIconEntry(KeyCode.K); EnsureIconEntry(KeyCode.L);
+        EnsureIconEntry(KeyCode.M); EnsureIconEntry(KeyCode.N); EnsureIconEntry(KeyCode.O); EnsureIconEntry(KeyCode.P);
+        EnsureIconEntry(KeyCode.Q); EnsureIconEntry(KeyCode.R); EnsureIconEntry(KeyCode.S); EnsureIconEntry(KeyCode.T);
+        EnsureIconEntry(KeyCode.U); EnsureIconEntry(KeyCode.V); EnsureIconEntry(KeyCode.W); EnsureIconEntry(KeyCode.X);
+        EnsureIconEntry(KeyCode.Y); EnsureIconEntry(KeyCode.Z);
+        EnsureIconEntry(KeyCode.Alpha0); EnsureIconEntry(KeyCode.Alpha1); EnsureIconEntry(KeyCode.Alpha2);
+        EnsureIconEntry(KeyCode.Alpha3); EnsureIconEntry(KeyCode.Alpha4); EnsureIconEntry(KeyCode.Alpha5);
+        EnsureIconEntry(KeyCode.Alpha6); EnsureIconEntry(KeyCode.Alpha7); EnsureIconEntry(KeyCode.Alpha8);
+        EnsureIconEntry(KeyCode.Alpha9);
+        EnsureIconEntry(KeyCode.Space); EnsureIconEntry(KeyCode.LeftShift); EnsureIconEntry(KeyCode.LeftControl);
+        EnsureIconEntry(KeyCode.LeftAlt); EnsureIconEntry(KeyCode.Return);
+        EnsureIconEntry(KeyCode.UpArrow); EnsureIconEntry(KeyCode.DownArrow); EnsureIconEntry(KeyCode.LeftArrow); EnsureIconEntry(KeyCode.RightArrow);
+    }
+
+    private void EnsureIconEntry(KeyCode key)
+    {
+        int index = keyIcons.FindIndex(x => x.key == key);
+        KeyIconEntry entry = index >= 0 ? keyIcons[index] : new KeyIconEntry { key = key };
+        if (entry.sprite == null)
+        {
+            string slug = KeyToSlug(key);
+            if (!string.IsNullOrEmpty(slug))
+            {
+                entry.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(IconBasePath + "key-" + slug + ".png");
+            }
+        }
+
+        if (index >= 0)
+        {
+            keyIcons[index] = entry;
+        }
+        else if (entry.sprite != null)
+        {
+            keyIcons.Add(entry);
+        }
+    }
+#endif
 }

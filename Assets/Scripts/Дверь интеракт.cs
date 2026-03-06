@@ -44,6 +44,7 @@ public class ДверьИнтеракт : MonoBehaviour
     [SerializeField] private Color фонТекста = new Color(0f, 0f, 0f, 0.55f);
     [SerializeField] private float длительностьНадписи = 1.3f;
     [SerializeField] private Vector2 размерИконки = new Vector2(90f, 90f);
+    [SerializeField] private List<KeyIconEntry> keyIcons = new List<KeyIconEntry>();
 
     private Canvas canvas;
     private Image иконкаКлавиши;
@@ -61,6 +62,7 @@ public class ДверьИнтеракт : MonoBehaviour
     private Coroutine корутинаАнимации;
     private FacingDirection последняяСторона = FacingDirection.Front;
     private KeyCode cachedActionKey = KeyCode.None;
+    private readonly Dictionary<KeyCode, Sprite> iconMap = new Dictionary<KeyCode, Sprite>();
 
     [Serializable]
     private struct DirectionalFrames
@@ -79,6 +81,13 @@ public class ДверьИнтеракт : MonoBehaviour
         Side,
         BackSide,
         Back
+    }
+
+    [Serializable]
+    private struct KeyIconEntry
+    {
+        public KeyCode key;
+        public Sprite sprite;
     }
 
     private void Awake()
@@ -106,6 +115,7 @@ public class ДверьИнтеракт : MonoBehaviour
         }
 
         BuildUi();
+        BuildIconMap();
         LoadKeyIcon();
     }
 
@@ -423,12 +433,17 @@ public class ДверьИнтеракт : MonoBehaviour
     private void LoadKeyIcon()
     {
         KeyCode actionKey = GameInputBindings.ActionKey;
+        KeyCode normalized = NormalizeKey(actionKey);
         Sprite sp = null;
+        iconMap.TryGetValue(normalized, out sp);
 #if UNITY_EDITOR
-        string slug = KeyToSlug(actionKey);
-        if (!string.IsNullOrEmpty(slug))
+        if (sp == null)
         {
-            sp = AssetDatabase.LoadAssetAtPath<Sprite>(ИконкиПуть + "key-" + slug + ".png");
+            string slug = KeyToSlug(normalized);
+            if (!string.IsNullOrEmpty(slug))
+            {
+                sp = AssetDatabase.LoadAssetAtPath<Sprite>(ИконкиПуть + "key-" + slug + ".png");
+            }
         }
 #endif
         иконкаСпрайт = sp;
@@ -451,6 +466,36 @@ public class ДверьИнтеракт : MonoBehaviour
         if (cachedActionKey != GameInputBindings.ActionKey)
         {
             LoadKeyIcon();
+        }
+    }
+
+    private void BuildIconMap()
+    {
+        iconMap.Clear();
+        for (int i = 0; i < keyIcons.Count; i++)
+        {
+            if (keyIcons[i].sprite == null)
+            {
+                continue;
+            }
+
+            KeyCode k = NormalizeKey(keyIcons[i].key);
+            if (!iconMap.ContainsKey(k))
+            {
+                iconMap.Add(k, keyIcons[i].sprite);
+            }
+        }
+    }
+
+    private static KeyCode NormalizeKey(KeyCode key)
+    {
+        switch (key)
+        {
+            case KeyCode.RightShift: return KeyCode.LeftShift;
+            case KeyCode.RightControl: return KeyCode.LeftControl;
+            case KeyCode.RightAlt: return KeyCode.LeftAlt;
+            case KeyCode.KeypadEnter: return KeyCode.Return;
+            default: return key;
         }
     }
 
@@ -613,6 +658,50 @@ public class ДверьИнтеракт : MonoBehaviour
         if (string.IsNullOrWhiteSpace(тегДвери))
         {
             тегДвери = "Door";
+        }
+
+        PopulateIconLibrary();
+        BuildIconMap();
+    }
+
+    private void PopulateIconLibrary()
+    {
+        EnsureIconEntry(KeyCode.A); EnsureIconEntry(KeyCode.B); EnsureIconEntry(KeyCode.C); EnsureIconEntry(KeyCode.D);
+        EnsureIconEntry(KeyCode.E); EnsureIconEntry(KeyCode.F); EnsureIconEntry(KeyCode.G); EnsureIconEntry(KeyCode.H);
+        EnsureIconEntry(KeyCode.I); EnsureIconEntry(KeyCode.J); EnsureIconEntry(KeyCode.K); EnsureIconEntry(KeyCode.L);
+        EnsureIconEntry(KeyCode.M); EnsureIconEntry(KeyCode.N); EnsureIconEntry(KeyCode.O); EnsureIconEntry(KeyCode.P);
+        EnsureIconEntry(KeyCode.Q); EnsureIconEntry(KeyCode.R); EnsureIconEntry(KeyCode.S); EnsureIconEntry(KeyCode.T);
+        EnsureIconEntry(KeyCode.U); EnsureIconEntry(KeyCode.V); EnsureIconEntry(KeyCode.W); EnsureIconEntry(KeyCode.X);
+        EnsureIconEntry(KeyCode.Y); EnsureIconEntry(KeyCode.Z);
+        EnsureIconEntry(KeyCode.Alpha0); EnsureIconEntry(KeyCode.Alpha1); EnsureIconEntry(KeyCode.Alpha2);
+        EnsureIconEntry(KeyCode.Alpha3); EnsureIconEntry(KeyCode.Alpha4); EnsureIconEntry(KeyCode.Alpha5);
+        EnsureIconEntry(KeyCode.Alpha6); EnsureIconEntry(KeyCode.Alpha7); EnsureIconEntry(KeyCode.Alpha8);
+        EnsureIconEntry(KeyCode.Alpha9);
+        EnsureIconEntry(KeyCode.Space); EnsureIconEntry(KeyCode.LeftShift); EnsureIconEntry(KeyCode.LeftControl);
+        EnsureIconEntry(KeyCode.LeftAlt); EnsureIconEntry(KeyCode.Return);
+        EnsureIconEntry(KeyCode.UpArrow); EnsureIconEntry(KeyCode.DownArrow); EnsureIconEntry(KeyCode.LeftArrow); EnsureIconEntry(KeyCode.RightArrow);
+    }
+
+    private void EnsureIconEntry(KeyCode key)
+    {
+        int index = keyIcons.FindIndex(x => x.key == key);
+        KeyIconEntry entry = index >= 0 ? keyIcons[index] : new KeyIconEntry { key = key };
+        if (entry.sprite == null)
+        {
+            string slug = KeyToSlug(key);
+            if (!string.IsNullOrEmpty(slug))
+            {
+                entry.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(ИконкиПуть + "key-" + slug + ".png");
+            }
+        }
+
+        if (index >= 0)
+        {
+            keyIcons[index] = entry;
+        }
+        else if (entry.sprite != null)
+        {
+            keyIcons.Add(entry);
         }
     }
 

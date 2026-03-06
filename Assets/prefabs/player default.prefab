@@ -683,7 +683,7 @@ MonoBehaviour:
     - {fileID: 2800000, guid: 912538d6361c2274dbacf0ce5d15ffbb, type: 3}
     - {fileID: 2800000, guid: 71e8e712fb6e45542937b377e8b845e4, type: 3}
   runSpeedMultiplier: 1.8
-  jumpForce: 2.5
+  jumpForce: 3
   groundCheckDistance: 0.08
   groundMask:
     serializedVersion: 2
@@ -733,7 +733,7 @@ MonoBehaviour:
   rayOrigin: {fileID: 0}
   groundMask:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 4294967295
   groundCheckDistance: 0.1
   walkStepInterval: 0.25
   runStepInterval: 0.2
@@ -1010,7 +1010,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: "Assembly-CSharp::\u0414\u0432\u0435\u0440\u044C\u0418\u043D\u0442\u0435\u0440\u0430\u043A\u0442"
   "\u0442\u0435\u0433\u0414\u0432\u0435\u0440\u0438": Door
-  "\u043A\u043B\u0430\u0432\u0438\u0448\u0430\u0414\u0435\u0439\u0441\u0442\u0432\u0438\u044F": 101
   "\u0442\u043E\u0447\u043A\u0430\u041F\u0440\u0438\u0432\u044F\u0437\u043A\u0438": {fileID: 0}
   "\u0441\u043C\u0435\u0449\u0435\u043D\u0438\u0435\u041C\u0438\u0440\u0430": {x: 0, y: 1.1, z: 0}
   "\u0430\u043D\u0438\u043C\u0430\u0442\u043E\u0440\u0418\u0433\u0440\u043E\u043A\u0430": {fileID: 3069663199643969668}
@@ -1052,6 +1051,97 @@ MonoBehaviour:
   "\u0444\u043E\u043D\u0422\u0435\u043A\u0441\u0442\u0430": {r: 0, g: 0, b: 0, a: 0.55}
   "\u0434\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C\u041D\u0430\u0434\u043F\u0438\u0441\u0438": 1.3
   "\u0440\u0430\u0437\u043C\u0435\u0440\u0418\u043A\u043E\u043D\u043A\u0438": {x: 90, y: 90}
+  keyIcons:
+  - key: 97
+    sprite: {fileID: 21300000, guid: 56b278971339ca04693594e4e7827430, type: 3}
+  - key: 98
+    sprite: {fileID: 21300000, guid: 46d718141f46d3b4fa463670821c2993, type: 3}
+  - key: 99
+    sprite: {fileID: 21300000, guid: b64cfff10fb2b2448b3b9a36f9bd686f, type: 3}
+  - key: 100
+    sprite: {fileID: 21300000, guid: 0a5c0a6c26f4c2a4584ff82ba7afb609, type: 3}
+  - key: 101
+    sprite: {fileID: 21300000, guid: 86e2effc8c6c0fb418cf6f4ca4e50a15, type: 3}
+  - key: 102
+    sprite: {fileID: 21300000, guid: aaf36551a44f31746a9cbd109bf2ddb9, type: 3}
+  - key: 103
+    sprite: {fileID: 21300000, guid: 143d7bc436a4f3944b9c524203b545f7, type: 3}
+  - key: 104
+    sprite: {fileID: 21300000, guid: 705520195b0b1384b906562493b746b9, type: 3}
+  - key: 105
+    sprite: {fileID: 21300000, guid: e8f9f0f5d70d9894399788ac1da1acfa, type: 3}
+  - key: 106
+    sprite: {fileID: 21300000, guid: 6e2ddd731e4a9d446b5d62e564a93230, type: 3}
+  - key: 107
+    sprite: {fileID: 21300000, guid: 10b8ae9dd6395574e89c9a1a6493dc21, type: 3}
+  - key: 108
+    sprite: {fileID: 21300000, guid: 07ef8838dbfbf16488001596349379ed, type: 3}
+  - key: 109
+    sprite: {fileID: 21300000, guid: 37c3a573e95f58144acd01ab0e57b3e5, type: 3}
+  - key: 110
+    sprite: {fileID: 21300000, guid: ffbceae80a63c7d4daf806c7d84122e0, type: 3}
+  - key: 111
+    sprite: {fileID: 21300000, guid: f573e6a62e3d23c4cbc647391e54e260, type: 3}
+  - key: 112
+    sprite: {fileID: 21300000, guid: ee5b1b8a3e886f341bf725cb24a3ab1a, type: 3}
+  - key: 113
+    sprite: {fileID: 21300000, guid: 252c5e59100cca94994eaf5da44ada5c, type: 3}
+  - key: 114
+    sprite: {fileID: 21300000, guid: 3541f8923b292a04fbdb50d8e03e7310, type: 3}
+  - key: 115
+    sprite: {fileID: 21300000, guid: a04f4b8b6fc591e45b47e4d2335112af, type: 3}
+  - key: 116
+    sprite: {fileID: 21300000, guid: ac2f36f701635d345847d7344c4a569e, type: 3}
+  - key: 117
+    sprite: {fileID: 21300000, guid: 0d07856e44ae8e943b4dc28ab8f5991e, type: 3}
+  - key: 118
+    sprite: {fileID: 21300000, guid: 51691d97034731b438ea94d6086b0fa3, type: 3}
+  - key: 119
+    sprite: {fileID: 21300000, guid: 89f05177b67d6de438ff1eede9210317, type: 3}
+  - key: 120
+    sprite: {fileID: 21300000, guid: e1888f9378360ce4cb77c32bf8e7b43b, type: 3}
+  - key: 121
+    sprite: {fileID: 21300000, guid: 2561fbc303f5d3943bd942c483a1d3ab, type: 3}
+  - key: 122
+    sprite: {fileID: 21300000, guid: 6c9dff479e1be6343bc9780664e14ddd, type: 3}
+  - key: 48
+    sprite: {fileID: 21300000, guid: e14679770b4461b43a7474adb06ec6ab, type: 3}
+  - key: 49
+    sprite: {fileID: 21300000, guid: 195d851f423f9b945b204d89a2e6b0dc, type: 3}
+  - key: 50
+    sprite: {fileID: 21300000, guid: 540e0ebea7720fa439796503561edd62, type: 3}
+  - key: 51
+    sprite: {fileID: 21300000, guid: 79b0772b94ec9f44d830f5add1931dd4, type: 3}
+  - key: 52
+    sprite: {fileID: 21300000, guid: 03a2b710fb7ef5b42bc5291fd4c7d9bf, type: 3}
+  - key: 53
+    sprite: {fileID: 21300000, guid: 715ab06d127db13469dabfe514b0ef44, type: 3}
+  - key: 54
+    sprite: {fileID: 21300000, guid: e44db831b21253d438118f16f90fb3b8, type: 3}
+  - key: 55
+    sprite: {fileID: 21300000, guid: a03e9d46cce5b544a8c7a7bdcfbb19ea, type: 3}
+  - key: 56
+    sprite: {fileID: 21300000, guid: f3f53107e73b7c848bcbd566b27fbb8b, type: 3}
+  - key: 57
+    sprite: {fileID: 21300000, guid: 2605b5fc81880984aa35b4026a1ef915, type: 3}
+  - key: 32
+    sprite: {fileID: 21300000, guid: e6adc80da8d4ce24eb987ed4418c6455, type: 3}
+  - key: 304
+    sprite: {fileID: 21300000, guid: 9b3e79ace80afd34eacd15140907231b, type: 3}
+  - key: 306
+    sprite: {fileID: 21300000, guid: ec5fe309b9b6c7b43b408a0dd39eb440, type: 3}
+  - key: 308
+    sprite: {fileID: 21300000, guid: 32dfa21e84d54d44bb80175ae8971c2e, type: 3}
+  - key: 13
+    sprite: {fileID: 21300000, guid: 13dbafbb9d7e23641aeb5f76452847e5, type: 3}
+  - key: 273
+    sprite: {fileID: 21300000, guid: 8ea51173b29cf454d9e67cbdc5cba3a6, type: 3}
+  - key: 274
+    sprite: {fileID: 21300000, guid: fb2e0cab1d414d84085c5c7f9643a4f0, type: 3}
+  - key: 276
+    sprite: {fileID: 21300000, guid: afa193f41e12a9e48b9001b0c8b4e896, type: 3}
+  - key: 275
+    sprite: {fileID: 21300000, guid: 8c2b035b0f58a734c896094e4e14a630, type: 3}
 --- !u!1 &8356788951671816901
 GameObject:
   m_ObjectHideFlags: 0

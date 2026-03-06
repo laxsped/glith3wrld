@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class PlayerWASDAnimator : MonoBehaviour
 {
+    private const string PausePrefPrefix = "PauseSimple.";
+    private const string CharacterLightingKey = PausePrefPrefix + "character_lighting";
+    private const string HdrpUnlitShaderName = "HDRP/Unlit";
+    private const string HdrpLitShaderName = "HDRP/Lit";
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private bool useXZPlane = true;
@@ -33,6 +38,7 @@ public class PlayerWASDAnimator : MonoBehaviour
     private static readonly int BaseColorMapId = Shader.PropertyToID("_BaseColorMap");
 
     private Material runtimeMaterial;
+    private Material baseMaterialAsset;
     private Rigidbody rb;
     private Collider bodyCollider;
     private float frameTimer;
@@ -44,6 +50,7 @@ public class PlayerWASDAnimator : MonoBehaviour
     private bool inputEnabled = true;
     private bool hasExternalSpeedCap;
     private float externalSpeedCap = float.PositiveInfinity;
+    private int cachedCharacterLightingMode = -1;
 
     private enum AnimState
     {
@@ -87,6 +94,7 @@ public class PlayerWASDAnimator : MonoBehaviour
 
         if (targetRenderer != null)
         {
+            baseMaterialAsset = targetRenderer.sharedMaterial;
             runtimeMaterial = targetRenderer.material;
             if (visualTransform == null)
             {
@@ -96,6 +104,7 @@ public class PlayerWASDAnimator : MonoBehaviour
 
         rb = GetComponent<Rigidbody>();
         bodyCollider = GetComponent<Collider>();
+        ApplyCharacterLightingFromPrefs(true);
     }
 
     private void Update()
@@ -125,6 +134,7 @@ public class PlayerWASDAnimator : MonoBehaviour
 
         UpdateFacingDirection(cachedInput, isMoving);
         UpdateVisualFlip(cachedInput, isMoving);
+        ApplyCharacterLightingFromPrefs(false);
         UpdateAnimationState(isMoving, cachedIsRunning, isGrounded);
         TickAnimation();
     }
@@ -417,6 +427,7 @@ public class PlayerWASDAnimator : MonoBehaviour
 
     private void Start()
     {
+        ApplyCharacterLightingFromPrefs(true);
         ApplyCurrentFrame();
     }
 
@@ -470,6 +481,41 @@ public class PlayerWASDAnimator : MonoBehaviour
     {
         hasExternalSpeedCap = false;
         externalSpeedCap = float.PositiveInfinity;
+    }
+
+    private void ApplyCharacterLightingFromPrefs(bool force)
+    {
+        if (targetRenderer == null)
+        {
+            return;
+        }
+
+        int mode = Mathf.Clamp(PlayerPrefs.GetInt(CharacterLightingKey, 0), 0, 1);
+        if (!force && mode == cachedCharacterLightingMode)
+        {
+            return;
+        }
+
+        cachedCharacterLightingMode = mode;
+        string targetShaderName = mode == 0 ? HdrpUnlitShaderName : HdrpLitShaderName;
+        Shader targetShader = Shader.Find(targetShaderName);
+        if (targetShader == null)
+        {
+            return;
+        }
+
+        Material src = runtimeMaterial != null ? runtimeMaterial : baseMaterialAsset;
+        if (src != null && src.shader == targetShader)
+        {
+            return;
+        }
+
+        Material newMat = src != null ? new Material(src) : new Material(targetShader);
+        newMat.shader = targetShader;
+
+        targetRenderer.material = newMat;
+        runtimeMaterial = targetRenderer.material;
+        ApplyCurrentFrame();
     }
 
     private static Vector2 ReadMovementInput()
