@@ -41,6 +41,7 @@ public class PauseMenuSimple : MonoBehaviour
     [SerializeField] private WindNoiseGenerator windNoise;
     [SerializeField] private GrassFootstepNoise grassSteps;
     [SerializeField] private SurfaceMovementAudio surfaceMovementAudio;
+    [SerializeField] private СкрежетТяги[] dragScrapeAudios;
 
     private const string PrefPrefix = "PauseSimple.";
     private const string KeyIconDirectory = "Assets/ICONS/Controls/keyboard-mouse-input-icons-251008/keyboard-input-icons/";
@@ -163,6 +164,9 @@ public class PauseMenuSimple : MonoBehaviour
     private bool isOpen;
     private SettingsSection currentSection = SettingsSection.General;
     private RectTransform dropdownPopupRoot;
+    private RectTransform dropdownPopupViewport;
+    private RectTransform dropdownPopupContent;
+    private ScrollRect dropdownPopupScroll;
     private bool dropdownPopupOpen;
     private readonly List<Button> dropdownPopupButtons = new List<Button>();
     private Action<int> dropdownPopupOnSelect;
@@ -603,7 +607,7 @@ public class PauseMenuSimple : MonoBehaviour
         text.font = font;
         text.fontSize = size;
         text.alignment = TextAnchor.MiddleLeft;
-        text.color = Color.white;
+        text.color = new Color(1f, 1f, 1f, 0.98f);
         text.raycastTarget = false;
 
         return text;
@@ -859,6 +863,11 @@ public class PauseMenuSimple : MonoBehaviour
         if (menuAudioSource == null)
         {
             menuAudioSource = GetComponent<AudioSource>();
+        }
+
+        if (dragScrapeAudios == null || dragScrapeAudios.Length == 0)
+        {
+            dragScrapeAudios = UnityEngine.Object.FindObjectsByType<СкрежетТяги>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
         }
 
         // Capture baseline levels for 100% mapping.
@@ -1495,18 +1504,39 @@ public class PauseMenuSimple : MonoBehaviour
 
     private void OnColorBlindPressed()
     {
-        colorBlindIndex = (colorBlindIndex + 1) % 4;
-        PlayerPrefs.SetInt(PrefPrefix + "color_blind", colorBlindIndex);
-        ApplyVisualSettings();
-        SetTextSafe(colorBlindValueText, GetColorBlindLabel());
+        List<string> options = new List<string>(4)
+        {
+            IsEnglish ? "off" : "выкл",
+            "protanopia",
+            "deuteranopia",
+            "tritanopia"
+        };
+
+        OpenDropdownPopup(colorBlindButton, options, colorBlindIndex, index =>
+        {
+            colorBlindIndex = Mathf.Clamp(index, 0, 3);
+            PlayerPrefs.SetInt(PrefPrefix + "color_blind", colorBlindIndex);
+            ApplyVisualSettings();
+            SetTextSafe(colorBlindValueText, GetColorBlindLabel());
+        });
     }
 
     private void OnGraphicsQualityPressed()
     {
-        graphicsQualityIndex = (graphicsQualityIndex + 1) % 3;
-        PlayerPrefs.SetInt(PrefPrefix + "graphics_quality", graphicsQualityIndex);
-        ApplyGraphicsQuality();
-        SetTextSafe(qualityValueText, GetGraphicsQualityLabel());
+        List<string> options = new List<string>(3)
+        {
+            IsEnglish ? "low" : "низкое(low)",
+            IsEnglish ? "medium" : "среднее(medium)",
+            IsEnglish ? "high" : "высокое(high)"
+        };
+
+        OpenDropdownPopup(qualityButton, options, graphicsQualityIndex, index =>
+        {
+            graphicsQualityIndex = Mathf.Clamp(index, 0, 2);
+            PlayerPrefs.SetInt(PrefPrefix + "graphics_quality", graphicsQualityIndex);
+            ApplyGraphicsQuality();
+            SetTextSafe(qualityValueText, GetGraphicsQualityLabel());
+        });
     }
 
     private void OnCharacterLightingPressed()
@@ -1584,6 +1614,17 @@ public class PauseMenuSimple : MonoBehaviour
         {
             grassSteps.SetMasterVolume(value);
         }
+
+        if (dragScrapeAudios != null)
+        {
+            for (int i = 0; i < dragScrapeAudios.Length; i++)
+            {
+                if (dragScrapeAudios[i] != null)
+                {
+                    dragScrapeAudios[i].SetMasterVolume(value);
+                }
+            }
+        }
     }
 
     private void ApplyGraphicsQuality()
@@ -1648,10 +1689,19 @@ public class PauseMenuSimple : MonoBehaviour
 
     private void OnWindowModePressed()
     {
-        windowModeIndex = (windowModeIndex + 1) % windowModeOptions.Length;
-        PlayerPrefs.SetInt(PrefPrefix + "window_mode", (int)windowModeOptions[windowModeIndex]);
-        ApplyWindowMode();
-        SetTextSafe(windowModeValueText, GetWindowModeLabel());
+        List<string> options = new List<string>(windowModeOptions.Length);
+        for (int i = 0; i < windowModeOptions.Length; i++)
+        {
+            options.Add(GetWindowModeLabelForIndex(i));
+        }
+
+        OpenDropdownPopup(windowModeButton, options, windowModeIndex, index =>
+        {
+            windowModeIndex = Mathf.Clamp(index, 0, windowModeOptions.Length - 1);
+            PlayerPrefs.SetInt(PrefPrefix + "window_mode", (int)windowModeOptions[windowModeIndex]);
+            ApplyWindowMode();
+            SetTextSafe(windowModeValueText, GetWindowModeLabel());
+        });
     }
 
     private void OnFpsPressed()
@@ -1687,15 +1737,16 @@ public class PauseMenuSimple : MonoBehaviour
         RectTransform sourceRect = sourceButton.GetComponent<RectTransform>();
         Vector3[] corners = new Vector3[4];
         sourceRect.GetWorldCorners(corners);
-        Vector2 screenTopLeft = RectTransformUtility.WorldToScreenPoint(null, corners[1]);
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(settingsRoot, screenTopLeft, null, out Vector2 localTopLeft);
+        Vector2 screenBottomLeft = RectTransformUtility.WorldToScreenPoint(null, corners[0]);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(settingsRoot, screenBottomLeft, null, out Vector2 localBottomLeft);
 
         float rowHeight = 34f;
-        float popupHeight = Mathf.Clamp(options.Count * rowHeight + 10f, 80f, 340f);
+        float popupHeight = Mathf.Clamp(options.Count * rowHeight + 10f, 80f, 240f);
         dropdownPopupRoot.sizeDelta = new Vector2(430f, popupHeight);
 
         float x = settingsValueX;
-        float y = localTopLeft.y - 6f;
+        // Convert center-local Y to top-anchored Y and place popup just below source button.
+        float y = (localBottomLeft.y - settingsRoot.rect.height * 0.5f) - 4f;
 
         RectTransform rootRect = settingsRoot;
         float topLimit = -6f;
@@ -1704,13 +1755,16 @@ public class PauseMenuSimple : MonoBehaviour
 
         dropdownPopupRoot.anchoredPosition = new Vector2(x, y);
         dropdownPopupRoot.SetAsLastSibling();
+        dropdownPopupContent.sizeDelta = new Vector2(0f, options.Count * rowHeight + 6f);
+        dropdownPopupContent.anchoredPosition = Vector2.zero;
+        dropdownPopupScroll.verticalNormalizedPosition = 1f;
 
         Font f = ResolveSettingsItemsFont(customFont != null ? customFont : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
         for (int i = 0; i < options.Count; i++)
         {
             int idx = i;
             GameObject rowGo = new GameObject("Option " + i, typeof(RectTransform), typeof(Button), typeof(Image));
-            rowGo.transform.SetParent(dropdownPopupRoot, false);
+            rowGo.transform.SetParent(dropdownPopupContent, false);
             RectTransform rr = rowGo.GetComponent<RectTransform>();
             rr.anchorMin = new Vector2(0f, 1f);
             rr.anchorMax = new Vector2(1f, 1f);
@@ -1740,7 +1794,7 @@ public class PauseMenuSimple : MonoBehaviour
             t.font = f;
             t.fontSize = settingsItemFontSize;
             t.alignment = TextAnchor.MiddleLeft;
-            t.color = Color.white;
+            t.color = new Color(1f, 1f, 1f, 0.98f);
             t.text = options[i];
             t.raycastTarget = false;
 
@@ -1758,16 +1812,49 @@ public class PauseMenuSimple : MonoBehaviour
             return;
         }
 
-        GameObject popupGo = new GameObject("Dropdown Popup", typeof(RectTransform), typeof(Image));
+        GameObject popupGo = new GameObject("Dropdown Popup", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
         popupGo.transform.SetParent(settingsRoot, false);
         dropdownPopupRoot = popupGo.GetComponent<RectTransform>();
         dropdownPopupRoot.anchorMin = new Vector2(0f, 1f);
         dropdownPopupRoot.anchorMax = new Vector2(0f, 1f);
         dropdownPopupRoot.pivot = new Vector2(0f, 1f);
         dropdownPopupRoot.sizeDelta = new Vector2(430f, 200f);
+
         Image bg = popupGo.GetComponent<Image>();
         bg.color = new Color(0f, 0f, 0f, 0.92f);
         bg.raycastTarget = true;
+
+        dropdownPopupScroll = popupGo.GetComponent<ScrollRect>();
+        dropdownPopupScroll.horizontal = false;
+        dropdownPopupScroll.vertical = true;
+        dropdownPopupScroll.inertia = false;
+        dropdownPopupScroll.movementType = ScrollRect.MovementType.Clamped;
+        dropdownPopupScroll.scrollSensitivity = 48f;
+
+        GameObject viewportGo = new GameObject("Viewport", typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+        viewportGo.transform.SetParent(dropdownPopupRoot, false);
+        dropdownPopupViewport = viewportGo.GetComponent<RectTransform>();
+        dropdownPopupViewport.anchorMin = Vector2.zero;
+        dropdownPopupViewport.anchorMax = Vector2.one;
+        dropdownPopupViewport.offsetMin = new Vector2(2f, 2f);
+        dropdownPopupViewport.offsetMax = new Vector2(-2f, -2f);
+
+        Image viewportImage = viewportGo.GetComponent<Image>();
+        viewportImage.color = new Color(0f, 0f, 0f, 0f);
+        
+
+        GameObject contentGo = new GameObject("Content", typeof(RectTransform));
+        contentGo.transform.SetParent(dropdownPopupViewport, false);
+        dropdownPopupContent = contentGo.GetComponent<RectTransform>();
+        dropdownPopupContent.anchorMin = new Vector2(0f, 1f);
+        dropdownPopupContent.anchorMax = new Vector2(1f, 1f);
+        dropdownPopupContent.pivot = new Vector2(0.5f, 1f);
+        dropdownPopupContent.anchoredPosition = Vector2.zero;
+        dropdownPopupContent.sizeDelta = new Vector2(0f, 0f);
+
+        dropdownPopupScroll.viewport = dropdownPopupViewport;
+        dropdownPopupScroll.content = dropdownPopupContent;
+
         dropdownPopupRoot.gameObject.SetActive(false);
     }
 
@@ -1912,6 +1999,29 @@ public class PauseMenuSimple : MonoBehaviour
         return r.x + "x" + r.y;
     }
 
+    private string GetWindowModeLabelForIndex(int index)
+    {
+        int clamped = Mathf.Clamp(index, 0, windowModeOptions.Length - 1);
+        FullScreenMode mode = windowModeOptions[clamped];
+        if (IsEnglish)
+        {
+            switch (mode)
+            {
+                case FullScreenMode.ExclusiveFullScreen: return "fullscreen";
+                case FullScreenMode.FullScreenWindow: return "borderless";
+                case FullScreenMode.Windowed: return "windowed";
+                default: return mode.ToString().ToLowerInvariant();
+            }
+        }
+
+        switch (mode)
+        {
+            case FullScreenMode.ExclusiveFullScreen: return "полноэкранный";
+            case FullScreenMode.FullScreenWindow: return "без рамки";
+            case FullScreenMode.Windowed: return "оконный";
+            default: return mode.ToString().ToLowerInvariant();
+        }
+    }
     private string GetWindowModeLabel()
     {
         FullScreenMode mode = windowModeOptions[Mathf.Clamp(windowModeIndex, 0, windowModeOptions.Length - 1)];
@@ -2029,3 +2139,14 @@ public class HoverQuestionSuffix : MonoBehaviour, IPointerEnterHandler, IPointer
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+

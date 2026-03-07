@@ -11,6 +11,7 @@ public class ЛифтСтарт : MonoBehaviour
     [Header("Аудио")]
     [SerializeField] private AudioSource источникЗвука;
     [SerializeField] private AudioClip звукOneShot;
+    [SerializeField] [Range(0f, 1f)] private float громкостьSfx = 1f;
 
     [Header("Тайминги")]
     [SerializeField] private float задержкаПередОткрытием = 7f;
@@ -46,7 +47,8 @@ public class ЛифтСтарт : MonoBehaviour
 
         if (источникЗвука != null && звукOneShot != null)
         {
-            источникЗвука.PlayOneShot(звукOneShot);
+            float fx = Mathf.Clamp01(PlayerPrefs.GetInt("PauseSimple.volume_effects", 10) / 10f);
+            источникЗвука.PlayOneShot(звукOneShot, громкостьSfx * fx);
         }
     }
 
@@ -79,3 +81,5 @@ public class ЛифтСтарт : MonoBehaviour
         праваяДверь.localPosition = цельПравой;
     }
 }
+
+

@@ -27,6 +27,7 @@ public class CameraTriggerZone : MonoBehaviour
     public bool fadeIn = false;
     public float fadeDuration = 1f;
     public float targetVolume = 1f;
+    [Range(0f, 1f)] public float sfxOneShotVolume = 1f;
 
     private Vector3 startPosition;
     private Vector3 targetPosition;
@@ -73,7 +74,8 @@ public class CameraTriggerZone : MonoBehaviour
             }
             else
             {
-                audioSource.PlayOneShot(audioClip);
+                float fx = Mathf.Clamp01(PlayerPrefs.GetInt("PauseSimple.volume_effects", 10) / 10f);
+                audioSource.PlayOneShot(audioClip, sfxOneShotVolume * fx);
             }
         }
     }
@@ -98,10 +100,12 @@ public class CameraTriggerZone : MonoBehaviour
             fadeElapsed += Time.deltaTime;
             float t = Mathf.Clamp01(fadeElapsed / fadeDuration);
 
-            audioSource.volume = Mathf.Lerp(0f, targetVolume, t);
+            float fx = Mathf.Clamp01(PlayerPrefs.GetInt("PauseSimple.volume_effects", 10) / 10f);
+            audioSource.volume = Mathf.Lerp(0f, targetVolume * fx, t);
 
             if (t >= 1f)
                 isFading = false;
         }
     }
 }
+

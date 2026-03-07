@@ -18,6 +18,7 @@ public class SmartLightFlicker : MonoBehaviour
     [Header("Звук")]
     public AudioSource audioSource;
     public AudioClip[] flickerClips;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
 
     private bool isPlayerInside = false;
     private float targetIntensity;
@@ -58,7 +59,8 @@ public class SmartLightFlicker : MonoBehaviour
     {
         if (flickerClips.Length > 0 && audioSource != null && !audioSource.isPlaying)
         {
-            audioSource.PlayOneShot(flickerClips[Random.Range(0, flickerClips.Length)]);
+            float fx = Mathf.Clamp01(PlayerPrefs.GetInt("PauseSimple.volume_effects", 10) / 10f);
+            audioSource.PlayOneShot(flickerClips[Random.Range(0, flickerClips.Length)], sfxVolume * fx);
         }
     }
 
@@ -99,3 +101,5 @@ public class SmartLightFlicker : MonoBehaviour
         }
     }
 }
+
+
