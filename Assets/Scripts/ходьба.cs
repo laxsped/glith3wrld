@@ -52,6 +52,12 @@ public class PlayerWASDAnimator : MonoBehaviour
     private float externalSpeedCap = float.PositiveInfinity;
     private int cachedCharacterLightingMode = -1;
 
+    private bool noclipApplied;
+    private bool rbPrevUseGravity;
+    private bool rbPrevIsKinematic;
+    private bool rbPrevDetectCollisions;
+    private bool colliderPrevIsTrigger;
+
     private enum AnimState
     {
         Idle,
@@ -126,8 +132,9 @@ public class PlayerWASDAnimator : MonoBehaviour
         }
 
         bool isMoving = cachedInput.sqrMagnitude > 0.001f;
-        cachedIsRunning = isMoving && !GameInputBindings.RunLocked && Input.GetKey(GameInputBindings.RunKey);
-        if (Input.GetKeyDown(GameInputBindings.JumpKey) && isGrounded)
+        bool noclip = GameInputBindings.NoClipEnabled;
+        cachedIsRunning = !noclip && isMoving && !GameInputBindings.RunLocked && Input.GetKey(GameInputBindings.RunKey);
+        if (!noclip && Input.GetKeyDown(GameInputBindings.JumpKey) && isGrounded)
         {
             cachedJumpPressed = true;
         }
@@ -141,6 +148,17 @@ public class PlayerWASDAnimator : MonoBehaviour
 
     private void FixedUpdate()
     {
+        bool noclip = GameInputBindings.NoClipEnabled;
+        ApplyNoClipState(noclip);
+
+        if (noclip)
+        {
+            MoveNoClip(cachedInput);
+            isGrounded = false;
+            cachedJumpPressed = false;
+            return;
+        }
+
         RefreshGrounded();
         TryJump();
         Move(cachedInput, cachedIsRunning);
@@ -208,6 +226,101 @@ public class PlayerWASDAnimator : MonoBehaviour
         }
     }
 
+
+    private void MoveNoClip(Vector2 input)
+    {
+        if (input.sqrMagnitude > 1f)
+        {
+            input.Normalize();
+        }
+
+        float horizontal = -input.x;
+        Vector3 planar = useXZPlane
+            ? new Vector3(input.y, 0f, horizontal)
+            : new Vector3(input.x, input.y, 0f);
+
+        float vertical = 0f;
+        if (Input.GetKey(GameInputBindings.JumpKey))
+        {
+            vertical += 1f;
+        }
+        if (Input.GetKey(GameInputBindings.RunKey))
+        {
+            vertical -= 1f;
+        }
+
+        Vector3 move = planar;
+        move.y = vertical;
+        if (move.sqrMagnitude > 1f)
+        {
+            move.Normalize();
+        }
+
+        float speed = hasExternalSpeedCap ? Mathf.Min(moveSpeed, Mathf.Max(0f, externalSpeedCap)) : moveSpeed;
+        Vector3 step = move * speed * Time.fixedDeltaTime;
+
+        if (rb != null)
+        {
+            rb.MovePosition(rb.position + step);
+        }
+        else
+        {
+            transform.position += step;
+        }
+    }
+
+    private void ApplyNoClipState(bool enable)
+    {
+        if (enable)
+        {
+            if (noclipApplied)
+            {
+                return;
+            }
+
+            if (rb != null)
+            {
+                rbPrevUseGravity = rb.useGravity;
+                rbPrevIsKinematic = rb.isKinematic;
+                rbPrevDetectCollisions = rb.detectCollisions;
+                rb.useGravity = false;
+                rb.isKinematic = true;
+                rb.detectCollisions = false;
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+
+            if (bodyCollider != null)
+            {
+                colliderPrevIsTrigger = bodyCollider.isTrigger;
+                bodyCollider.isTrigger = true;
+            }
+
+            noclipApplied = true;
+            return;
+        }
+
+        if (!noclipApplied)
+        {
+            return;
+        }
+
+        if (rb != null)
+        {
+            rb.useGravity = rbPrevUseGravity;
+            rb.isKinematic = rbPrevIsKinematic;
+            rb.detectCollisions = rbPrevDetectCollisions;
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        if (bodyCollider != null)
+        {
+            bodyCollider.isTrigger = colliderPrevIsTrigger;
+        }
+
+        noclipApplied = false;
+    }
     private void UpdateAnimationState(bool isMoving, bool isRunning, bool grounded)
     {
         AnimState nextState = AnimState.Idle;
@@ -425,6 +538,11 @@ public class PlayerWASDAnimator : MonoBehaviour
         collisionSkin = Mathf.Clamp(collisionSkin, 0.001f, 0.05f);
     }
 
+    private void OnDisable()
+    {
+        ApplyNoClipState(false);
+    }
+
     private void Start()
     {
         ApplyCharacterLightingFromPrefs(true);
@@ -543,5 +661,7 @@ public class PlayerWASDAnimator : MonoBehaviour
         return new Vector2(x, y);
     }
 }
+
+
 
 

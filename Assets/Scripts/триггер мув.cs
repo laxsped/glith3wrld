@@ -101,7 +101,7 @@ public class CameraTriggerZone : MonoBehaviour
             float t = Mathf.Clamp01(fadeElapsed / fadeDuration);
 
             float fx = Mathf.Clamp01(PlayerPrefs.GetInt("PauseSimple.volume_effects", 10) / 10f);
-            audioSource.volume = Mathf.Lerp(0f, targetVolume * fx, t);
+            audioSource.volume = Mathf.Lerp(0f, Mathf.Max(0.1f, targetVolume * fx), t);
 
             if (t >= 1f)
                 isFading = false;

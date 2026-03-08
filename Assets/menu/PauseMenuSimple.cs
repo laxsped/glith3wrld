@@ -273,6 +273,15 @@ public class PauseMenuSimple : MonoBehaviour
         {
             Destroy(runtimeSettingsProfile);
         }
+
+        // Safety: if object dies while paused, do not leave global audio muted.
+        if (isOpen)
+        {
+            Time.timeScale = 1f;
+            AudioListener.pause = false;
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 
     private void SetOpen(bool open, bool force = false)

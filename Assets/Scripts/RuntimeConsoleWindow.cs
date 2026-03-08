@@ -539,6 +539,33 @@ public class RuntimeConsoleWindow : MonoBehaviour
             return;
         }
 
+        if (parts.Length > 0 && parts[0].Equals("noclip", StringComparison.OrdinalIgnoreCase))
+        {
+            if (parts.Length == 1 || parts[1].Equals("toggle", StringComparison.OrdinalIgnoreCase))
+            {
+                GameInputBindings.NoClipEnabled = !GameInputBindings.NoClipEnabled;
+                AppendLog((en ? "noclip: " : "noclip: ") + (GameInputBindings.NoClipEnabled ? (en ? "on" : "вкл") : (en ? "off" : "выкл")));
+                return;
+            }
+
+            if (parts[1].Equals("on", StringComparison.OrdinalIgnoreCase))
+            {
+                GameInputBindings.NoClipEnabled = true;
+                AppendLog(en ? "noclip: on" : "noclip: вкл");
+                return;
+            }
+
+            if (parts[1].Equals("off", StringComparison.OrdinalIgnoreCase))
+            {
+                GameInputBindings.NoClipEnabled = false;
+                AppendLog(en ? "noclip: off" : "noclip: выкл");
+                return;
+            }
+
+            AppendLog(en ? "[warn] usage: noclip [toggle|on|off]" : "[warn] использование: noclip [toggle|on|off]");
+            return;
+        }
+
         if (parts.Length > 0 && parts[0].Equals("window", StringComparison.OrdinalIgnoreCase))
         {
             if (parts.Length >= 2 && parts[1].Equals("reset", StringComparison.OrdinalIgnoreCase))
@@ -613,6 +640,7 @@ public class RuntimeConsoleWindow : MonoBehaviour
         AppendLog(en ? "time                 - show local time" : "time                 - показать локальное время");
         AppendLog(en ? "fps [n|unlimited]    - get/set target fps" : "fps [n|unlimited]    - получить/задать лимит фпс");
         AppendLog(en ? "timescale [v]        - get/set time scale" : "timescale [v]        - получить/задать таймскейл");
+        AppendLog(en ? "noclip [on|off]      - fly mode (jump up, run down)" : "noclip [on|off]      - режим полета (прыжок вверх, бег вниз)");
         AppendLog(en ? "lang [en|ru]         - switch console language" : "lang [en|ru]         - сменить язык консоли");
         AppendLog(en ? "scene                - active scene info" : "scene                - информация об активной сцене");
         AppendLog(en ? "scene reload         - reload active scene" : "scene reload         - перезагрузить активную сцену");

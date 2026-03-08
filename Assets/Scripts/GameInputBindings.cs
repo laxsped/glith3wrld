@@ -18,6 +18,7 @@ public static class GameInputBindings
     private static bool loaded;
     public static bool RunLocked { get; set; }
     public static bool InputBlocked { get; set; }
+    public static bool NoClipEnabled { get; set; }
 
     public static KeyCode ForwardKey { get; private set; } = KeyCode.W;
     public static KeyCode BackwardKey { get; private set; } = KeyCode.S;
@@ -115,4 +116,6 @@ public static class GameInputBindings
         PlayerPrefs.Save();
     }
 }
+
+
 
