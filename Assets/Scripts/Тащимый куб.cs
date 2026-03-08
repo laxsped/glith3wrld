@@ -115,6 +115,12 @@ public class ТащимыйКуб : MonoBehaviour
         UpdatePromptKeyVisual(false);
         UpdatePromptPosition();
 
+        if (GameInputBindings.InputBlocked)
+        {
+            StopDragging();
+            return;
+        }
+
         if (игрок == null)
         {
             if (тащится && debugLogs)
@@ -739,3 +745,4 @@ public class ТащимыйКуб : MonoBehaviour
     }
 #endif
 }
+

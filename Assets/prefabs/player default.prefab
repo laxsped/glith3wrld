@@ -482,7 +482,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4744428819765987496}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 7.2233124, y: 0.08940601, z: -2.295527}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1201,6 +1201,7 @@ MonoBehaviour:
   windNoise: {fileID: 0}
   grassSteps: {fileID: 4253489904195103794}
   surfaceMovementAudio: {fileID: 0}
+  dragScrapeAudios: []
   lowHdrpAsset: {fileID: 11400000, guid: 168a2336534e4e043b2a210b6f8d379a, type: 2}
   mediumHdrpAsset: {fileID: 11400000, guid: 3e2e6bfc59709614ab90c0cd7d755e48, type: 2}
   highHdrpAsset: {fileID: 11400000, guid: 36dd385e759c96147b6463dcd1149c11, type: 2}

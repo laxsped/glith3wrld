@@ -129,7 +129,7 @@ public class ДверьИнтеракт : MonoBehaviour
             return;
         }
 
-        if (Input.GetKeyDown(GameInputBindings.ActionKey))
+        if (!GameInputBindings.InputBlocked && Input.GetKeyDown(GameInputBindings.ActionKey))
         {
             if (!счетчикНажатийПоДвери.TryGetValue(текущаяДверь, out нажатий))
             {
@@ -725,3 +725,4 @@ public class ДверьИнтеракт : MonoBehaviour
     }
 #endif
 }
+

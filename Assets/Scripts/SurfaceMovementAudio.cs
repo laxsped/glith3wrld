@@ -89,6 +89,13 @@ public class SurfaceMovementAudio : MonoBehaviour
 
     private void Update()
     {
+        if (GameInputBindings.InputBlocked)
+        {
+            stepTimer = 0f;
+            wasGrounded = TryGetGroundHit(out _);
+            return;
+        }
+
         bool groundedNow = TryGetGroundHit(out RaycastHit hit);
         Vector2 moveInput = ReadMoveInput();
         bool hasMoveInput = moveInput.sqrMagnitude > 0.001f;
@@ -317,3 +324,5 @@ public class SurfaceMovementAudio : MonoBehaviour
         return Mathf.Max(0f, masterVolume);
     }
 }
+
+

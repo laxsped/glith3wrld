@@ -109,7 +109,7 @@ public class PlayerWASDAnimator : MonoBehaviour
 
     private void Update()
     {
-        if (!inputEnabled)
+        if (!inputEnabled || GameInputBindings.InputBlocked)
         {
             cachedInput = Vector2.zero;
             cachedIsRunning = false;
@@ -439,7 +439,7 @@ public class PlayerWASDAnimator : MonoBehaviour
     public void SetInputEnabled(bool enabled)
     {
         inputEnabled = enabled;
-        if (!inputEnabled)
+        if (!inputEnabled || GameInputBindings.InputBlocked)
         {
             cachedInput = Vector2.zero;
             cachedIsRunning = false;
@@ -543,4 +543,5 @@ public class PlayerWASDAnimator : MonoBehaviour
         return new Vector2(x, y);
     }
 }
+
 

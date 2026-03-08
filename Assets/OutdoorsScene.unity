@@ -7760,6 +7760,7 @@ GameObject:
   - component: {fileID: 1471146592}
   - component: {fileID: 1471146595}
   - component: {fileID: 1471146594}
+  - component: {fileID: 1471146596}
   m_Layer: 0
   m_Name: "\u0438\u0433\u0440\u0430 \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440"
   m_TagString: Untagged
@@ -7917,6 +7918,31 @@ MonoBehaviour:
   stereoPanSpeed: 0.17
   lowCutHz: 120
   highCutHz: 200
+--- !u!114 &1471146596
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1471146591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c0461eac34e55c41ac65703ea209eab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RuntimeConsoleWindow
+  toggleKey: 96
+  startOpened: 0
+  initialSize: {x: 860, y: 500}
+  initialPosition: {x: 120, y: -90}
+  minSize: {x: 520, y: 280}
+  maxSize: {x: 1500, y: 920}
+  windowColor: {r: 0.12, g: 0.12, b: 0.12, a: 0.96}
+  inputBarColor: {r: 0.03, g: 0.03, b: 0.03, a: 0.98}
+  titleFont: {fileID: 12800000, guid: e19754fc328243b4586d891d63b18ee9, type: 3}
+  titleFontSize: 22
+  logFontSize: 16
+  inputFontSize: 17
+  resizeHandleSize: 18
 --- !u!1 &1481316419
 GameObject:
   m_ObjectHideFlags: 0
@@ -7977,6 +8003,7 @@ MonoBehaviour:
   fadeIn: 0
   fadeDuration: 1
   targetVolume: 1
+  sfxOneShotVolume: 1
 --- !u!65 &1481316422
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -9472,6 +9499,7 @@ MonoBehaviour:
   fadeIn: 1
   fadeDuration: 5
   targetVolume: 1
+  sfxOneShotVolume: 1
 --- !u!65 &1710344439
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -11702,6 +11730,7 @@ MonoBehaviour:
   textColor: {r: 1, g: 1, b: 1, a: 1}
   delayBeforeJumpPrompt: 5
   unlockRunOnTutorialComplete: 0
+  keepRunLockedForNextScene: 1
   keyIcons:
   - key: 97
     sprite: {fileID: 21300000, guid: 56b278971339ca04693594e4e7827430, type: 3}
