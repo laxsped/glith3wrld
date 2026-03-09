@@ -372,5 +372,90 @@ public class ЛифтСтарт : MonoBehaviour
             default: return null;
         }
     }
-}
 
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (шрифтОбучения == null)
+        {
+            шрифтОбучения = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Press_Start_2P/PressStart2P-Regular.ttf");
+        }
+
+        PopulateIconLibrary();
+    }
+
+    private void PopulateIconLibrary()
+    {
+        EnsureIconEntry(KeyCode.A);
+        EnsureIconEntry(KeyCode.B);
+        EnsureIconEntry(KeyCode.C);
+        EnsureIconEntry(KeyCode.D);
+        EnsureIconEntry(KeyCode.E);
+        EnsureIconEntry(KeyCode.F);
+        EnsureIconEntry(KeyCode.G);
+        EnsureIconEntry(KeyCode.H);
+        EnsureIconEntry(KeyCode.I);
+        EnsureIconEntry(KeyCode.J);
+        EnsureIconEntry(KeyCode.K);
+        EnsureIconEntry(KeyCode.L);
+        EnsureIconEntry(KeyCode.M);
+        EnsureIconEntry(KeyCode.N);
+        EnsureIconEntry(KeyCode.O);
+        EnsureIconEntry(KeyCode.P);
+        EnsureIconEntry(KeyCode.Q);
+        EnsureIconEntry(KeyCode.R);
+        EnsureIconEntry(KeyCode.S);
+        EnsureIconEntry(KeyCode.T);
+        EnsureIconEntry(KeyCode.U);
+        EnsureIconEntry(KeyCode.V);
+        EnsureIconEntry(KeyCode.W);
+        EnsureIconEntry(KeyCode.X);
+        EnsureIconEntry(KeyCode.Y);
+        EnsureIconEntry(KeyCode.Z);
+        EnsureIconEntry(KeyCode.Alpha0);
+        EnsureIconEntry(KeyCode.Alpha1);
+        EnsureIconEntry(KeyCode.Alpha2);
+        EnsureIconEntry(KeyCode.Alpha3);
+        EnsureIconEntry(KeyCode.Alpha4);
+        EnsureIconEntry(KeyCode.Alpha5);
+        EnsureIconEntry(KeyCode.Alpha6);
+        EnsureIconEntry(KeyCode.Alpha7);
+        EnsureIconEntry(KeyCode.Alpha8);
+        EnsureIconEntry(KeyCode.Alpha9);
+        EnsureIconEntry(KeyCode.Space);
+        EnsureIconEntry(KeyCode.LeftShift);
+        EnsureIconEntry(KeyCode.LeftControl);
+        EnsureIconEntry(KeyCode.LeftAlt);
+        EnsureIconEntry(KeyCode.UpArrow);
+        EnsureIconEntry(KeyCode.DownArrow);
+        EnsureIconEntry(KeyCode.LeftArrow);
+        EnsureIconEntry(KeyCode.RightArrow);
+        EnsureIconEntry(KeyCode.Return);
+        EnsureIconEntry(KeyCode.Escape);
+        EnsureIconEntry(KeyCode.Tab);
+    }
+
+    private void EnsureIconEntry(KeyCode key)
+    {
+        int index = keyIcons.FindIndex(x => x.key == key);
+        KeyIconEntry entry = index >= 0 ? keyIcons[index] : new KeyIconEntry { key = key };
+        if (entry.sprite == null)
+        {
+            string slug = KeyToSlug(key);
+            if (!string.IsNullOrEmpty(slug))
+            {
+                entry.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(IconBasePath + "key-" + slug + ".png");
+            }
+        }
+
+        if (index >= 0)
+        {
+            keyIcons[index] = entry;
+        }
+        else if (entry.sprite != null)
+        {
+            keyIcons.Add(entry);
+        }
+    }
+#endif
+}

@@ -7938,6 +7938,8 @@ MonoBehaviour:
   maxSize: {x: 1500, y: 920}
   windowColor: {r: 0.12, g: 0.12, b: 0.12, a: 0.96}
   inputBarColor: {r: 0.03, g: 0.03, b: 0.03, a: 0.98}
+  consoleBackgroundSprite: {fileID: 0}
+  consoleBackgroundAlpha: 0.12
   titleFont: {fileID: 12800000, guid: e19754fc328243b4586d891d63b18ee9, type: 3}
   titleFontSize: 22
   logFontSize: 16
@@ -11874,6 +11876,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sky and Fog Volume
       objectReference: {fileID: 0}
+    - target: {fileID: 8572112847397378651, guid: 4cd1fd4cfa7d0cb469ff6eb7027e0705, type: 3}
+      propertyPath: sharedProfile
+      value: 
+      objectReference: {fileID: 11400000, guid: c4c835fa3fb0ebf42a13ef9b66d071c3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
