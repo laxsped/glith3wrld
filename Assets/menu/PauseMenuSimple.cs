@@ -1,4 +1,3 @@
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -155,6 +154,16 @@ public class PauseMenuSimple : MonoBehaviour
     private Slider contrastSlider;
     private Text contrastValueText;
 
+    [Serializable]
+    private struct KeyIconEntry
+    {
+        public KeyCode key;
+        public Sprite sprite;
+    }
+
+    [Header("Key Icons")]
+    [SerializeField] private List<KeyIconEntry> keyIcons = new List<KeyIconEntry>();
+
     [Header("HDRP Quality Assets")]
     [SerializeField] private HDRenderPipelineAsset lowHdrpAsset;
     [SerializeField] private HDRenderPipelineAsset mediumHdrpAsset;
@@ -225,6 +234,7 @@ public class PauseMenuSimple : MonoBehaviour
     private void Awake()
     {
         GameInputBindings.EnsureLoaded();
+        BuildKeyIconCacheFromList();
         EnsureEventSystem();
         BuildUi();
         AutoFindAudioLinks();
@@ -1359,6 +1369,19 @@ public class PauseMenuSimple : MonoBehaviour
         }
     }
 
+    private void BuildKeyIconCacheFromList()
+    {
+        keyIconCache.Clear();
+        for (int i = 0; i < keyIcons.Count; i++)
+        {
+            KeyIconEntry entry = keyIcons[i];
+            if (entry.sprite != null)
+            {
+                keyIconCache[NormalizeKeyForIcon(entry.key)] = entry.sprite;
+            }
+        }
+    }
+
     private Sprite GetKeyIcon(KeyCode key)
     {
         KeyCode normalized = NormalizeKeyForIcon(key);
@@ -2174,6 +2197,83 @@ public class PauseMenuSimple : MonoBehaviour
 
         new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
     }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (customFont == null)
+        {
+            customFont = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/Press_Start_2P/PressStart2P-Regular.ttf");
+        }
+
+        PopulateIconLibrary();
+    }
+
+    private void PopulateIconLibrary()
+    {
+        // A–Z
+        for (KeyCode k = KeyCode.A; k <= KeyCode.Z; k++) EnsureIconEntry(k);
+        // 0–9
+        for (KeyCode k = KeyCode.Alpha0; k <= KeyCode.Alpha9; k++) EnsureIconEntry(k);
+        // F1–F12
+        for (KeyCode k = KeyCode.F1; k <= KeyCode.F12; k++) EnsureIconEntry(k);
+        // Common keys
+        EnsureIconEntry(KeyCode.Space);
+        EnsureIconEntry(KeyCode.LeftShift);
+        EnsureIconEntry(KeyCode.LeftControl);
+        EnsureIconEntry(KeyCode.LeftAlt);
+        EnsureIconEntry(KeyCode.Escape);
+        EnsureIconEntry(KeyCode.Tab);
+        EnsureIconEntry(KeyCode.Backspace);
+        EnsureIconEntry(KeyCode.Return);
+        EnsureIconEntry(KeyCode.UpArrow);
+        EnsureIconEntry(KeyCode.DownArrow);
+        EnsureIconEntry(KeyCode.LeftArrow);
+        EnsureIconEntry(KeyCode.RightArrow);
+        // Punctuation / special
+        EnsureIconEntry(KeyCode.Minus);
+        EnsureIconEntry(KeyCode.Equals);
+        EnsureIconEntry(KeyCode.Comma);
+        EnsureIconEntry(KeyCode.Period);
+        EnsureIconEntry(KeyCode.Slash);
+        EnsureIconEntry(KeyCode.Backslash);
+        EnsureIconEntry(KeyCode.LeftBracket);
+        EnsureIconEntry(KeyCode.RightBracket);
+        EnsureIconEntry(KeyCode.Semicolon);
+        EnsureIconEntry(KeyCode.Quote);
+        EnsureIconEntry(KeyCode.BackQuote);
+        EnsureIconEntry(KeyCode.Home);
+        EnsureIconEntry(KeyCode.End);
+        EnsureIconEntry(KeyCode.PageUp);
+        EnsureIconEntry(KeyCode.PageDown);
+        EnsureIconEntry(KeyCode.Insert);
+        EnsureIconEntry(KeyCode.Delete);
+    }
+
+    private void EnsureIconEntry(KeyCode key)
+    {
+        KeyCode normalized = NormalizeKeyForIcon(key);
+        int index = keyIcons.FindIndex(x => NormalizeKeyForIcon(x.key) == normalized);
+        KeyIconEntry entry = index >= 0 ? keyIcons[index] : new KeyIconEntry { key = normalized };
+        if (entry.sprite == null)
+        {
+            string slug = KeyToIconSlug(normalized);
+            if (!string.IsNullOrEmpty(slug))
+            {
+                entry.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(KeyIconDirectory + "key-" + slug + ".png");
+            }
+        }
+
+        if (index >= 0)
+        {
+            keyIcons[index] = entry;
+        }
+        else if (entry.sprite != null)
+        {
+            keyIcons.Add(entry);
+        }
+    }
+#endif
 }
 
 public class HoverQuestionSuffix : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
@@ -2215,18 +2315,3 @@ public class HoverQuestionSuffix : MonoBehaviour, IPointerEnterHandler, IPointer
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

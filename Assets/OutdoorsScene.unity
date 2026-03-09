@@ -7938,7 +7938,7 @@ MonoBehaviour:
   maxSize: {x: 1500, y: 920}
   windowColor: {r: 0.12, g: 0.12, b: 0.12, a: 0.96}
   inputBarColor: {r: 0.03, g: 0.03, b: 0.03, a: 0.98}
-  consoleBackgroundSprite: {fileID: 0}
+  consoleBackgroundSprite: {fileID: 21300000, guid: 0ddc4370b3edf734db71ae243c9698af, type: 3}
   consoleBackgroundAlpha: 0.12
   titleFont: {fileID: 12800000, guid: e19754fc328243b4586d891d63b18ee9, type: 3}
   titleFontSize: 22
@@ -8006,6 +8006,7 @@ MonoBehaviour:
   fadeDuration: 1
   targetVolume: 1
   sfxOneShotVolume: 1
+  oneWayOnly: 0
 --- !u!65 &1481316422
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -9502,6 +9503,7 @@ MonoBehaviour:
   fadeDuration: 5
   targetVolume: 1
   sfxOneShotVolume: 1
+  oneWayOnly: 0
 --- !u!65 &1710344439
 BoxCollider:
   m_ObjectHideFlags: 0
