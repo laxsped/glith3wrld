@@ -9618,6 +9618,7 @@ MonoBehaviour:
   m_Script: {fileID: 1147935442}
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.HighDefinition.Runtime::UnityEngine.Rendering.HighDefinition.SceneObjectIDMapSceneAsset
+  m_Entries: []
 --- !u!4 &259818412
 Transform:
   m_ObjectHideFlags: 19
@@ -36842,7 +36843,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2bb00aadb6ed5e149bd4025bc4b238de, type: 2}
+  - {fileID: 2100000, guid: 8c19ea4d7a0f01f47b1bec3188d66a77, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
