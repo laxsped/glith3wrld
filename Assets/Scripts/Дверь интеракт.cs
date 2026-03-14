@@ -20,6 +20,7 @@ public class ДверьИнтеракт : MonoBehaviour
 
     [Header("Поиск двери")]
     [SerializeField] private string тегДвери = "Door";
+    [SerializeField] private string тегОткрываемойДвери = "DoorOpen";
 
     [Header("Точка UI")]
     [SerializeField] private Transform точкаПривязки;
@@ -128,14 +129,24 @@ public class ДверьИнтеракт : MonoBehaviour
         {
             return;
         }
-
         if (!GameInputBindings.InputBlocked && Input.GetKeyDown(GameInputBindings.ActionKey))
         {
+            if (IsOpenDoor(текущаяДверь))
+            {
+                TryOpenDoor(текущаяДверь);
+
+                if (корутинаАнимации != null)
+                {
+                    StopCoroutine(корутинаАнимации);
+                }
+                корутинаАнимации = StartCoroutine(ПроигратьКадрыИнтеракт(ОпределитьСторонуИнтеракта()));
+                return;
+            }
+
             if (!счетчикНажатийПоДвери.TryGetValue(текущаяДверь, out нажатий))
             {
                 нажатий = 0;
             }
-
             нажатий++;
             счетчикНажатийПоДвери[текущаяДверь] = нажатий;
             TryResolveDoorOverrides(текущаяДверь);
@@ -164,7 +175,7 @@ public class ДверьИнтеракт : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.CompareTag(тегДвери))
+        if (!IsDoorTag(other))
         {
             return;
         }
@@ -178,7 +189,7 @@ public class ДверьИнтеракт : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.CompareTag(тегДвери))
+        if (!IsDoorTag(other))
         {
             return;
         }
@@ -197,6 +208,54 @@ public class ДверьИнтеракт : MonoBehaviour
         }
     }
 
+    private bool IsDoorTag(Collider other)
+    {
+        return other != null && (HasTagInParents(other.transform, тегДвери) || HasTagInParents(other.transform, тегОткрываемойДвери));
+    }
+
+    private bool IsOpenDoor(Collider other)
+    {
+        return other != null && HasTagInParents(other.transform, тегОткрываемойДвери);
+    }
+
+    private void TryOpenDoor(Collider other)
+    {
+        if (other == null)
+        {
+            return;
+        }
+
+        ДверьОткрываемая openDoor = other.GetComponent<ДверьОткрываемая>();
+        if (openDoor == null)
+        {
+            openDoor = other.GetComponentInParent<ДверьОткрываемая>();
+        }
+
+        if (openDoor != null)
+        {
+            openDoor.Toggle(transform);
+        }
+    }
+
+    private bool HasTagInParents(Transform t, string tag)
+    {
+        if (t == null)
+        {
+            return false;
+        }
+
+        Transform cur = t;
+        while (cur != null)
+        {
+            if (cur.CompareTag(tag))
+            {
+                return true;
+            }
+            cur = cur.parent;
+        }
+
+        return false;
+    }
     private IEnumerator ПоказатьНадписьСнизу()
     {
         bool en = PlayerPrefs.GetInt(ЯзыкКлюч, 1) == 0;
@@ -725,4 +784,8 @@ public class ДверьИнтеракт : MonoBehaviour
     }
 #endif
 }
+
+
+
+
 
